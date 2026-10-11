@@ -8,6 +8,6 @@ import org.springframework.data.repository.CrudRepository;
 
 
 public interface JobRepository extends CrudRepository<Job, String> {
-    Job findByCodigo(long code);
-    List<Job> findByNome(String name);
+    Job findByCode(long code);
+    List<Job> findByName(String name);
 }

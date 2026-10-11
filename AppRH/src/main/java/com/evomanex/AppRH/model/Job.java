@@ -14,7 +14,7 @@ public class Job implements Serializable{
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private long code;
     @NotEmpty
-    private  String name;
+    private String name;
     @NotEmpty
     private String description;
     @NotEmpty
