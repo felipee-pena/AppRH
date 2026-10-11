@@ -1,0 +1,3 @@
+CREATE TABLE IF NOT EXISTS public.apprh (
+    id BIGSERIAL PRIMARY KEY
+);
