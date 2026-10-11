@@ -15,7 +15,7 @@ public class Candidate {
     private String nameCandidate;
 
     @NotEmpty
-    private  String email;
+    private String email;
 
     @ManyToOne
     private Job job;
