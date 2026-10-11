@@ -6,6 +6,7 @@ import jakarta.persistence.*;
 
 import jakarta.validation.constraints.NotEmpty;
 
+@Entity
 public class Job implements Serializable{
 
     private static final long serialVersionUUID = '1';
@@ -20,7 +21,7 @@ public class Job implements Serializable{
     private String date;
     @NotEmpty
     private String salary;
-    @OneToMany(mappedBy = "vaga", cascade = CascadeType.REMOVE)
+    @OneToMany(mappedBy = "job", cascade = CascadeType.REMOVE)
     private List<Candidate> Candidate;
 
     public long getCode() {
