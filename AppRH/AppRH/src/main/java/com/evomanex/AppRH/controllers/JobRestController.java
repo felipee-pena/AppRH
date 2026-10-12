@@ -14,7 +14,7 @@ import java.util.stream.StreamSupport;
 
 @RestController
 @RequestMapping("/api/jobs")
-@CrossOrigin(origins = "http://localhost:8081")
+@CrossOrigin(origins = "http://localhost:5173")
 public class JobRestController {
 
     private final JobRepository jobRepository;
