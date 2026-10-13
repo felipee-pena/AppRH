@@ -18,6 +18,7 @@ public class Job implements Serializable {
     @NotEmpty
     private String name;
 
+    @Column(columnDefinition = "TEXT")
     @NotEmpty
     private String description;
 

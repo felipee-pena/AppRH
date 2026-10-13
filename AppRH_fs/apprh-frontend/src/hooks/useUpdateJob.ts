@@ -17,7 +17,12 @@ async function updateJob({
 }: UpdateJobVariables): Promise<JobData> {
   const response = await api.put<JobData>(
     `/api/jobs/${code}`,
-    job
+    {
+      name: job.name,
+      description: job.description,
+      date: job.date,
+      salary: job.salary,
+    }
   );
 
   return response.data;
@@ -30,13 +35,15 @@ export function useUpdateJob() {
     mutationFn: updateJob,
 
     onSuccess: async (_, variables) => {
-      await queryClient.invalidateQueries({
-        queryKey: ["jobs"],
-      });
+      await Promise.all([
+        queryClient.invalidateQueries({
+          queryKey: ["jobs"],
+        }),
 
-      await queryClient.invalidateQueries({
-        queryKey: ["jobs", variables.code],
-      });
+        queryClient.invalidateQueries({
+          queryKey: ["jobs", variables.code],
+        }),
+      ]);
     },
   });
 }

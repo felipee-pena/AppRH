@@ -7,6 +7,7 @@ import { createPortal } from "react-dom";
 
 import { useCreateJob } from "../../hooks/useCreateJob";
 import type { JobData } from "../../interfaces/JobData";
+import { normalizeBrazilianCurrency } from "../../utils/currency";
 
 import "./create-job-modal.css";
 
@@ -33,12 +34,14 @@ export function CreateJobModal({
 
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    const normalizedSalary =
+      normalizeBrazilianCurrency(salary);
 
     const job: JobData = {
       name: name.trim(),
       description: description.trim(),
       date,
-      salary,
+      salary: normalizedSalary,
     };
 
     mutate(job);
@@ -160,7 +163,7 @@ export function CreateJobModal({
 
             <input
               id="job-salary"
-              type="number"
+              type="text"
               min="0"
               step="0.01"
               value={salary}
@@ -179,8 +182,8 @@ export function CreateJobModal({
 
             <textarea
               id="job-description"
-              rows={5}
-              maxLength={254}
+              rows={8}
+              maxLength={2000}
               value={description}
               placeholder="Descreva responsabilidades e requisitos."
               onChange={(event) =>

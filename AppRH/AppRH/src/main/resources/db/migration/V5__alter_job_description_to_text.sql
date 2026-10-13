@@ -1,0 +1,2 @@
+ALTER TABLE job
+ALTER COLUMN description TYPE TEXT;
