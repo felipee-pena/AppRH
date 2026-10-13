@@ -193,7 +193,7 @@ export function CreateJobModal({
             />
 
             <span className="job-modal__counter">
-              {description.length}/254
+              {description.length}/2000
             </span>
           </div>
 
