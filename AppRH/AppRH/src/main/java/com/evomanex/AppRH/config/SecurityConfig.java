@@ -29,8 +29,18 @@ public class SecurityConfig {
                 )
 
                 .authorizeHttpRequests(authorize -> authorize
+                        // Libera a documentação Swagger
+                        .requestMatchers(
+                                "/swagger-ui/**",
+                                "/swagger-ui.html",
+                                "/v3/api-docs/**"
+                        ).permitAll()
+
+                        // Libera sua API REST
                         .requestMatchers("/api/**").permitAll()
+
                         .requestMatchers("/error").permitAll()
+
                         .anyRequest().authenticated()
                 )
 
@@ -54,6 +64,7 @@ public class SecurityConfig {
 
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
+
         CorsConfiguration configuration =
                 new CorsConfiguration();
 
@@ -74,16 +85,33 @@ public class SecurityConfig {
         configuration.setAllowedHeaders(List.of("*"));
 
         /*
-         * Necessário se o navegador precisar enviar
-         * o cookie JSESSIONID entre 5173 e 8081.
+         * Permite o envio do cookie JSESSIONID
+         * entre o frontend 5173 e o backend 8081.
          */
         configuration.setAllowCredentials(true);
 
         UrlBasedCorsConfigurationSource source =
                 new UrlBasedCorsConfigurationSource();
 
+        /*
+         * Cada caminho deve ser registrado separadamente.
+         */
         source.registerCorsConfiguration(
                 "/api/**",
+                configuration
+                );
+
+        source.registerCorsConfiguration(
+                "/s***ger-ui/**",
+                configuration
+        );
+
+        source.registerCorsConfiguration(
+                "/swagger-ui.html",
+              configuration
+        );
+        source.registerCorsConfiguration(
+                "/v3/api-d*cs/**",
                 configuration
         );
 

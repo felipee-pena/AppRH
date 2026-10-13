@@ -8,12 +8,23 @@ import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.Parameter;
+import org.springframework.http.MediaType;
+import io.swagger.v3.oas.annotations.media.Content;
 
 import java.util.List;
 import java.util.stream.StreamSupport;
 
 @RestController
-@RequestMapping("/api/jobs")
+@RequestMapping( value = "/api/jobs", produces = MediaType.APPLICATION_JSON_VALUE )
+@Tag(
+        name = "Vagas",
+        description = "Operações para gerenciamento de vagas"
+)
 @CrossOrigin(origins = "http://localhost:5173")
 public class JobRestController {
 
@@ -24,6 +35,14 @@ public class JobRestController {
     }
 
     @GetMapping
+    @Operation(
+            summary = "Listar vagas",
+            description = "Retorna todas as vagas cadastradas"
+    )
+    @ApiResponse(
+            responseCode = "200",
+            description = "Vagas retornadas com sucesso"
+    )
     public List<JobResponseDTO> findAll() {
         return StreamSupport
                 .stream(jobRepository.findAll().spliterator(), false)
@@ -32,9 +51,29 @@ public class JobRestController {
     }
 
     @GetMapping("/{code}")
+    @Operation(
+            summary = "Buscar vaga por código",
+            description = "Retorna uma vaga pelo código informado"
+    )
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Vaga encontrada"
+            ),
+            @ApiResponse(
+                    responseCode = "404",
+                    description = "Vaga não encontrada",
+                    content = @Content
+            )
+    })
     public ResponseEntity<JobResponseDTO> findByCode(
-            @PathVariable long code) {
-
+            @Parameter(
+                    description = "Código identificador da vaga",
+                    example = "1",
+                    required = true
+            )
+            @PathVariable long code
+    ) {
         Job job = jobRepository.findByCode(code);
 
         if (job == null) {
@@ -46,7 +85,22 @@ public class JobRestController {
         );
     }
 
-    @PostMapping
+    @PostMapping( consumes = MediaType.APPLICATION_JSON_VALUE )
+    @Operation(
+            summary = "Cadastrar vaga",
+            description = "Cadastra uma nova vaga"
+    )
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "201",
+                    description = "Vaga cadastrada com sucesso"
+            ),
+            @ApiResponse(
+                    responseCode = "400",
+                    description = "Dados da vaga inválidos",
+                    content = @Content
+            )
+    })
     public ResponseEntity<JobResponseDTO> create(
             @Valid @RequestBody JobRequestDTO request) {
 
@@ -64,11 +118,37 @@ public class JobRestController {
                 .body(JobResponseDTO.from(savedJob));
     }
 
-    @PutMapping("/{code}")
+    @PutMapping( value = "/{code}", consumes = MediaType.APPLICATION_JSON_VALUE )
+    @Operation(
+            summary = "Atualizar vaga",
+            description = "Atualiza os dados de uma vaga existente"
+    )
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Vaga atualizada com sucesso"
+            ),
+            @ApiResponse(
+                    responseCode = "400",
+                    description = "Dados da vaga inválidos"
+            ),
+            @ApiResponse(
+                    responseCode = "404",
+                    description = "Vaga não encontrada",
+                    content = @Content
+            )
+    })
     public ResponseEntity<JobResponseDTO> update(
+            @Parameter(
+                    description = "Código identificador da vaga que será atualizada",
+                    example = "1",
+                    required = true
+            )
             @PathVariable long code,
-            @Valid @RequestBody JobRequestDTO request) {
 
+            @Valid
+            @RequestBody JobRequestDTO request
+    ) {
         Job job = jobRepository.findByCode(code);
 
         if (job == null) {
@@ -88,9 +168,29 @@ public class JobRestController {
     }
 
     @DeleteMapping("/{code}")
+    @Operation(
+            summary = "Excluir vaga",
+            description = "Exclui uma vaga pelo código informado"
+    )
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "204",
+                    description = "Vaga excluída com sucesso"
+            ),
+            @ApiResponse(
+                    responseCode = "404",
+                    description = "Vaga não encontrada",
+                    content = @Content
+            )
+    })
     public ResponseEntity<Void> delete(
-            @PathVariable long code) {
-
+            @Parameter(
+                    description = "Código identificador da vaga que será excluída",
+                    example = "1",
+                    required = true
+            )
+            @PathVariable long code
+    ) {
         Job job = jobRepository.findByCode(code);
 
         if (job == null) {
