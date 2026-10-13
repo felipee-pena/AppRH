@@ -1,12 +1,26 @@
 import { useState } from "react";
 
+import type { JobData } from "../../interfaces/JobData";
+
 import { JobCard } from "../../components/job-card/JobCard";
 import { CreateJobModal } from "../../components/create-job-modal/CreateJobModal";
+import { EditJobModal } from "../../components/edit-job-modal/EditJobModal";
+import { ConfirmationModal } from "../../components/confirmation-modal/ConfirmationModal";
+
 import { useJobs } from "../../hooks/useJobs";
+import { useDeleteJob } from "../../hooks/useDeleteJob";
 
 import "./jobs-page.css";
+
 export function JobsPage() {
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isCreateModalOpen, setIsCreateModalOpen] =
+    useState(false);
+
+  const [jobToEdit, setJobToEdit] =
+    useState<JobData | null>(null);
+
+  const [jobToDelete, setJobToDelete] =
+    useState<JobData | null>(null);
 
   const {
     data,
@@ -15,7 +29,49 @@ export function JobsPage() {
     error,
   } = useJobs();
 
+  const {
+    mutate: deleteJob,
+    isPending: isDeleting,
+    isError: isDeleteError,
+    error: deleteError,
+    reset: resetDelete,
+  } = useDeleteJob();
+
   const jobs = Array.isArray(data) ? data : [];
+
+  function openDeleteModal(code: number) {
+    const selectedJob = jobs.find(
+      (job) => job.code === code
+    );
+
+    if (!selectedJob) {
+      return;
+    }
+
+    resetDelete();
+    setJobToDelete(selectedJob);
+  }
+
+  function closeDeleteModal() {
+    if (isDeleting) {
+      return;
+    }
+
+    resetDelete();
+    setJobToDelete(null);
+  }
+
+  function confirmDelete() {
+    if (jobToDelete?.code === undefined) {
+      return;
+    }
+
+    deleteJob(jobToDelete.code, {
+      onSuccess: () => {
+        setJobToDelete(null);
+      },
+    });
+  }
 
   if (isLoading) {
     return (
@@ -31,7 +87,9 @@ export function JobsPage() {
     return (
       <main className="jobs-page">
         <div className="jobs-status jobs-status--error">
-          <h2>Não foi possível carregar as vagas</h2>
+          <h2>
+            Não foi possível carregar as vagas
+          </h2>
 
           <p>
             {error instanceof Error
@@ -54,15 +112,17 @@ export function JobsPage() {
           <h1>Vagas cadastradas</h1>
 
           <p>
-            Gerencie as oportunidades disponíveis e acompanhe
-            os processos seletivos do AppRH.
+            Gerencie as oportunidades disponíveis e
+            acompanhe os processos seletivos do AppRH.
           </p>
         </div>
 
         <button
           type="button"
           className="jobs-primary-button"
-          onClick={() => setIsModalOpen(true)}
+          onClick={() =>
+            setIsCreateModalOpen(true)
+          }
         >
           <span aria-hidden="true">+</span>
           Nova vaga
@@ -85,7 +145,9 @@ export function JobsPage() {
           <button
             type="button"
             className="jobs-primary-button"
-            onClick={() => setIsModalOpen(true)}
+            onClick={() =>
+              setIsCreateModalOpen(true)
+            }
           >
             Cadastrar primeira vaga
           </button>
@@ -94,25 +156,50 @@ export function JobsPage() {
         <section className="jobs-grid">
           {jobs.map((job) => (
             <JobCard
-              key={job.code}
+              key={job.code ?? job.name}
               job={job}
               onEdit={(selectedJob) => {
-                console.log("Editar:", selectedJob);
+                setJobToEdit(selectedJob);
               }}
-              onDelete={(code) => {
-                console.log("Excluir:", code);
-              }}
+              onDelete={openDeleteModal}
             />
           ))}
         </section>
       )}
 
-      {isModalOpen && (
+      {isCreateModalOpen && (
         <CreateJobModal
-          closeModal={() => setIsModalOpen(false)}
+          closeModal={() =>
+            setIsCreateModalOpen(false)
+          }
+        />
+      )}
+
+      {jobToEdit && (
+        <EditJobModal
+          job={jobToEdit}
+          closeModal={() =>
+            setJobToEdit(null)
+          }
+        />
+      )}
+
+      {jobToDelete && (
+        <ConfirmationModal
+          title="Excluir vaga?"
+          description={
+            isDeleteError
+              ? deleteError instanceof Error
+                ? deleteError.message
+                : "Não foi possível excluir a vaga."
+              : `A vaga "${jobToDelete.name}" será excluída permanentemente.`
+          }
+          confirmLabel="Excluir vaga"
+          isPending={isDeleting}
+          onCancel={closeDeleteModal}
+          onConfirm={confirmDelete}
         />
       )}
     </main>
   );
 }
-
