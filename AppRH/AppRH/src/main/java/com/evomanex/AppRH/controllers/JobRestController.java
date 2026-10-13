@@ -1,4 +1,5 @@
 package com.evomanex.AppRH.controllers;
+import com.evomanex.AppRH.domain.user.ApiErrorResponseDTO;
 
 import com.evomanex.AppRH.domain.user.JobRequestDTO;
 import com.evomanex.AppRH.domain.user.JobResponseDTO;
@@ -15,6 +16,8 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import io.swagger.v3.oas.annotations.Parameter;
 import org.springframework.http.MediaType;
 import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
 
 import java.util.List;
 import java.util.stream.StreamSupport;
@@ -85,7 +88,7 @@ public class JobRestController {
         );
     }
 
-    @PostMapping( consumes = MediaType.APPLICATION_JSON_VALUE )
+    @PostMapping
     @Operation(
             summary = "Cadastrar vaga",
             description = "Cadastra uma nova vaga"
@@ -93,17 +96,29 @@ public class JobRestController {
     @ApiResponses({
             @ApiResponse(
                     responseCode = "201",
-                    description = "Vaga cadastrada com sucesso"
+                    description = "Vaga cadastrada com sucesso",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(
+                                    implementation = JobResponseDTO.class
+                            )
+                    )
             ),
             @ApiResponse(
                     responseCode = "400",
                     description = "Dados da vaga inválidos",
-                    content = @Content
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(
+                                    implementation =
+                                            ApiErrorResponseDTO.class
+                            )
+                    )
             )
     })
     public ResponseEntity<JobResponseDTO> create(
-            @Valid @RequestBody JobRequestDTO request) {
-
+            @Valid @RequestBody JobRequestDTO request
+    ) {
         Job job = new Job();
 
         job.setName(request.name());
@@ -118,7 +133,7 @@ public class JobRestController {
                 .body(JobResponseDTO.from(savedJob));
     }
 
-    @PutMapping( value = "/{code}", consumes = MediaType.APPLICATION_JSON_VALUE )
+    @PutMapping("/{code}")
     @Operation(
             summary = "Atualizar vaga",
             description = "Atualiza os dados de uma vaga existente"
@@ -126,11 +141,24 @@ public class JobRestController {
     @ApiResponses({
             @ApiResponse(
                     responseCode = "200",
-                    description = "Vaga atualizada com sucesso"
+                    description = "Vaga atualizada com sucesso",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(
+                                    implementation = JobResponseDTO.class
+                            )
+                    )
             ),
             @ApiResponse(
                     responseCode = "400",
-                    description = "Dados da vaga inválidos"
+                    description = "Dados da vaga inválidos",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(
+                                    implementation =
+                                            ApiErrorResponseDTO.class
+                            )
+                    )
             ),
             @ApiResponse(
                     responseCode = "404",
@@ -141,13 +169,11 @@ public class JobRestController {
     public ResponseEntity<JobResponseDTO> update(
             @Parameter(
                     description = "Código identificador da vaga que será atualizada",
-                    example = "1",
-                    required = true
+                    example = "1"
             )
             @PathVariable long code,
 
-            @Valid
-            @RequestBody JobRequestDTO request
+            @Valid @RequestBody JobRequestDTO request
     ) {
         Job job = jobRepository.findByCode(code);
 
