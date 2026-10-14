@@ -85,13 +85,13 @@ public class SecurityConfigurations {
                          * Swagger e OpenAPI ficam disponíveis
                          * somente para ADMIN.
                          */
-                        .requestMatchers(
-                                "/swagger-ui.html",
-                                "/swagger-ui/**",
-                                "/v3/api-docs",
-                                "/v3/api-docs/**",
-                                "/v3/api-docs.yaml"
-                        ).hasRole("ADMIN")
+                                .requestMatchers(
+                                        "/swagg***ui.html",
+                                        "/swagger-ui/**",
+                                        "/v3/api-docs",
+                                        "/v3/api-docs/**",
+                                        "/v3/ap***ocs.yaml"
+                         ).permitAll()
 
                         /*
                          * Endpoint interno de tratamento de erros.
