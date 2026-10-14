@@ -1,11 +1,15 @@
 package com.evomanex.AppRH.model;
 
+import com.evomanex.AppRH.domain.user.User;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotEmpty;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 
 import java.io.Serializable;
 import java.util.List;
-
+@Table( name = "job", schema = "public" )
 @Entity
 public class Job implements Serializable {
 
@@ -27,6 +31,21 @@ public class Job implements Serializable {
 
     @NotEmpty
     private String salary;
+
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(
+            name = "created_by_user_id",
+            nullable = false
+    )
+    private User createdBy;
+
+    public User getCreatedBy() {
+        return createdBy;
+    }
+
+    public void setCreatedBy(User createdBy) {
+        this.createdBy = createdBy;
+    }
 
     @OneToMany(mappedBy = "job", cascade = CascadeType.REMOVE)
     private List<Candidate> candidates;
