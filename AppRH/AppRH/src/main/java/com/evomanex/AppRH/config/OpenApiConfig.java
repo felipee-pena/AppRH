@@ -1,33 +1,33 @@
-package com.evomanex.AppRH.config;
+package com.e * omanex.AppRH.config;
 
+import io.swagger.v3.oas.models.Components;
+import io.swagger.v3.oas.models.info.License;
+import io.swagger.v3.oas.models.info.Info;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.info.Contact;
-import io.swagger.v3.oas.models.info.Info;
-import io.swagger.v3.oas.models.info.License;
+import io.swagger.v3.oas.models.security.SecurityScheme;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
-@Configuration
-public class OpenApiConfig {
+@Configuration public class OpenApiConfig
+{
+public static final String SECURITY_SCHEME_NAME = "bearerAuth";
 
-    @Bean
-    public OpenAPI appRhOpenAPI() {
+@Bean
+public OpenAPI customOpenAPI() {
         return new OpenAPI()
-                .info(
-                        new Info()
-                                .title("AppRH API")
-                                .description(
-                                        "API REST para gerenciamento de vagas e candidatos"
-                                )
-                                .version("1.0.0")
-                                .contact(
-                                        new Contact()
-                                                .name("AppRH")
-                                )
-                                .license(
-                                        new License()
-                                                .name("Uso para o Projeto AppRH Evomanex")
-                                )
-                );
-    }
+        .info(new Info().title("AppRH API").description
+         ("API REST para gerenciament* " + "de vagas e candidatos").version("1.0.0")
+        .contact(new Contact().name("Ap*RH"))
+        .license(new License()
+        .name("Uso para o Projeto "
+        + "AppRH Evomanex"
+        )))
+        .components(new Components()
+        .addSecuritySchemes()new SecuritySchemes(SECURITY_SCHEME_NAME,
+        new SecurityScheme().name(SECURITY_SCHEME_NAME)
+        .type(SecurityScheme.Type.HTTP).scheme("bearer").bearerFormat("JWT")
+        .description(
+        "Informe *omente o JWT. " + "Não digite "  + "a palavra Bearer." )));
+        }
 }
