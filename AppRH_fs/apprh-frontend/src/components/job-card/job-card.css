@@ -133,3 +133,136 @@
   border-color: rgba(248, 113, 113, 0.55);
   background-color: rgba(239, 68, 68, 0.16);
 }
+.job-card__description {
+  display: -webkit-box;
+  overflow: hidden;
+  line-height: 1.65;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 4;
+}
+
+.job-card__description--expanded {
+  display: block;
+  overflow: visible;
+  -webkit-line-clamp: unset;
+}
+
+.job-card__details-button {
+  width: fit-content;
+  padding: 7px 0;
+  border: 0;
+  color: #a5b4fc;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  background: transparent;
+  cursor: pointer;
+}
+
+.job-card__details-button:hover {
+  color: #c7d2fe;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+
+.job-card__actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 18px;
+  padding-top: 16px;
+  border-top:
+    1px solid rgba(148, 163, 184, 0.13);
+}
+
+.job-card__action {
+  min-height: 40px;
+  padding: 0 16px;
+  border-radius: 10px;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.job-card__action--edit {
+  border:
+    1px solid rgba(129, 140, 248, 0.35);
+  color: #c7d2fe;
+  background:
+    rgba(99, 102, 241, 0.12);
+}
+
+.job-card__action--delete {
+  border:
+    1px solid rgba(248, 113, 113, 0.3);
+  color: #fecaca;
+  background:
+    rgba(127, 29, 29, 0.16);
+}
+
+.job-card__description {
+  display: -webkit-box;
+  overflow: hidden;
+  line-height: 1.65;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 4;
+}
+
+.job-card__description--expanded {
+  display: block;
+  overflow: visible;
+  -webkit-line-clamp: unset;
+}
+
+.job-card__details-button {
+  width: fit-content;
+  padding: 7px 0;
+  border: 0;
+  color: #a5b4fc;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  background: transparent;
+  cursor: pointer;
+}
+
+.job-card__details-button:hover {
+  color: #c7d2fe;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+
+.job-card__actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 18px;
+  padding-top: 16px;
+  border-top:
+    1px solid rgba(148, 163, 184, 0.13);
+}
+
+.job-card__action {
+  min-height: 40px;
+  padding: 0 16px;
+  border-radius: 10px;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.job-card__action--edit {
+  border:
+    1px solid rgba(129, 140, 248, 0.35);
+  color: #c7d2fe;
+  background:
+    rgba(99, 102, 241, 0.12);
+}
+
+.job-card__action--delete {
+  border:
+    1px solid rgba(248, 113, 113, 0.3);
+  color: #fecaca;
+  background:
+    rgba(127, 29, 29, 0.16);
+}

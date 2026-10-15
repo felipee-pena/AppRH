@@ -1,44 +1,112 @@
 import {
-  BrowserRouter,
+  Navigate,
   Route,
   Routes,
 } from "react-router-dom";
 
-import { MainLayout } from "../layouts/MainLayout";
-import { HomePage } from "../pages/home/HomePage";
-import { JobsPage } from "../pages/jobs/JobsPage";
-import { JobDetailsPage } from "../pages/jobs/JobDetailsPage";
-import { CandidatesPage } from "../pages/candidates/CandidatesPage";
-import { CandidateDetailsPage } from "../pages/candidates/CandidateDetailsPage";
-import { NotFoundPage } from "../pages/not-found/NotFoundPage";
+import {
+  ProtectedRoute,
+} from "../components/ProtectedRoute";
+
+import {
+  LoginPage,
+} from "../pages/login/LoginPage";
+
+import {
+  RegisterPage,
+} from "../pages/register/RegisterPage";
+
+import {
+  JobsPage,
+} from "../pages/jobs/JobsPage";
+
+import {
+  JobManagementPage,
+} from "../pages/job-management/JobManagementPage";
+
+import {
+  UsersPage,
+} from "../pages/users/UsersPage";
+
+import {
+  ForbiddenPage,
+} from "../pages/forbidden/ForbiddenPage";
 
 export function AppRoutes() {
   return (
-    <BrowserRouter>
-      <Routes>
-        <Route element={<MainLayout />}>
-          <Route path="/" element={<HomePage />} />
+    <Routes>
+      <Route
+        path="/login"
+        element={<LoginPage />}
+      />
 
-          <Route path="/jobs" element={<JobsPage />} />
+      <Route
+        path="/register"
+        element={<RegisterPage />}
+      />
 
-          <Route
-            path="/jobs/:code"
-            element={<JobDetailsPage />}
+      <Route
+        path="/jobs"
+        element={
+          <ProtectedRoute>
+            <JobsPage />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/management/jobs"
+        element={
+          <ProtectedRoute
+            allowedRoles={[
+              "ADMIN",
+              "USERRH",
+            ]}
+          >
+            <JobManagementPage />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/admin/users"
+        element={
+          <ProtectedRoute
+            allowedRoles={["ADMIN"]}
+          >
+            <UsersPage />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/forbidden"
+        element={
+          <ProtectedRoute>
+            <ForbiddenPage />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/"
+        element={
+          <Navigate
+            to="/jobs"
+            replace
           />
+        }
+      />
 
-          <Route
-            path="/candidates"
-            element={<CandidatesPage />}
+      <Route
+        path="*"
+        element={
+          <Navigate
+            to="/jobs"
+            replace
           />
-
-          <Route
-            path="/candidates/:id"
-            element={<CandidateDetailsPage />}
-          />
-
-          <Route path="*" element={<NotFoundPage />} />
-        </Route>
-      </Routes>
-    </BrowserRouter>
+        }
+      />
+    </Routes>
   );
 }
