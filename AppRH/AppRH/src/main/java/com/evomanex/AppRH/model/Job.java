@@ -17,6 +17,7 @@ import jakarta.persistence.Table;
 import java.io.Serializable;
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -76,6 +77,14 @@ public class Job implements Serializable {
             nullable = false
     )
     private Company company;
+
+    @Column(
+            name = "created_at",
+            nullable = false,
+            insertable = false,
+            updatable = false
+    )
+    private OffsetDateTime createdAt;
 
     @ManyToOne(
             fetch = FetchType.LAZY,
@@ -164,6 +173,16 @@ public class Job implements Serializable {
             Company company
     ) {
         this.company = company;
+    }
+
+    public OffsetDateTime getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(
+            OffsetDateTime createdAt
+    ) {
+        this.createdAt = createdAt;
     }
 
     public User getCreatedBy() {

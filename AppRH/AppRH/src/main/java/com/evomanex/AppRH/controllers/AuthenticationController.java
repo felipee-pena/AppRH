@@ -5,10 +5,8 @@ import com.evomanex.AppRH.domain.user.LoginResponseDTO;
 import com.evomanex.AppRH.domain.user.RegisterDTO;
 import com.evomanex.AppRH.domain.user.RegisterResponseDTO;
 import com.evomanex.AppRH.domain.user.User;
-import com.evomanex.AppRH.domain.user.UserRole;
-
 import com.evomanex.AppRH.infra.security.TokenService;
-import com.evomanex.AppRH.repository.UserRepository;
+import com.evomanex.AppRH.service.PublicRegistrationService;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -25,29 +23,32 @@ import org.springframework.http.ResponseEntity;
 
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.crypto.password.PasswordEncoder;
 
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+import java.util.Locale;
 
 @RestController
 @RequestMapping("/auth")
 @Tag(
         name = "Autenticação",
-        description = "Cadastro de candidatos e autenticação de usuários"
+        description = "Cadastro público e autenticação de usuários"
 )
 @SecurityRequirements
 public class AuthenticationController {
 
     private final AuthenticationManager authenticationManager;
     private final TokenService tokenService;
-    private final UserRepository userRepository;
-    private final PasswordEncoder passwordEncoder;
+    private final PublicRegistrationService
+            publicRegistrationService;
 
     public AuthenticationController(
             AuthenticationManager authenticationManager,
             TokenService tokenService,
-            UserRepository userRepository,
-            PasswordEncoder passwordEncoder
+            PublicRegistrationService publicRegistrationService
     ) {
         this.authenticationManager =
                 authenticationManager;
@@ -55,11 +56,8 @@ public class AuthenticationController {
         this.tokenService =
                 tokenService;
 
-        this.userRepository =
-                userRepository;
-
-        this.passwordEncoder =
-                passwordEncoder;
+        this.publicRegistrationService =
+                publicRegistrationService;
     }
 
     @PostMapping("/login")
@@ -90,19 +88,27 @@ public class AuthenticationController {
             @RequestBody
             AuthenticationDTO request
     ) {
-        var usernamePassword =
+        String normalizedLogin =
+                request.login()
+                        .trim()
+                        .toLowerCase(
+                                Locale.ROOT
+                        );
+
+        var authenticationToken =
                 new UsernamePasswordAuthenticationToken(
-                        request.login(),
+                        normalizedLogin,
                         request.password()
                 );
 
         var authentication =
                 authenticationManager.authenticate(
-                        usernamePassword
+                        authenticationToken
                 );
 
         User authenticatedUser =
-                (User) authentication.getPrincipal();
+                (User) authentication
+                        .getPrincipal();
 
         String accessToken =
                 tokenService.generateToken(
@@ -116,19 +122,29 @@ public class AuthenticationController {
                         TokenService.EXPIRATION_SECONDS
                 );
 
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(
+                response
+        );
     }
 
     @PostMapping("/register")
     @Operation(
-            summary = "Cadastrar candidato",
-            description =
-                    "Cria um usuário candidato com o perfil USER"
+            summary = "Cadastrar usuário",
+            description = """
+                    Cria um candidato USER ou profissional USERRH.
+
+                    USER não deve informar empresa.
+
+                    USERRH deve selecionar uma empresa existente
+                    por companyId ou informar newCompanyName.
+
+                    O cadastro público nunca cria ADMIN.
+                    """
     )
     @ApiResponses({
             @ApiResponse(
                     responseCode = "201",
-                    description = "Candidato cadastrado",
+                    description = "Usuário cadastrado",
                     content = @Content(
                             mediaType = "application/json",
                             schema = @Schema(
@@ -143,8 +159,13 @@ public class AuthenticationController {
                     content = @Content
             ),
             @ApiResponse(
+                    responseCode = "404",
+                    description = "Empresa não encontrada",
+                    content = @Content
+            ),
+            @ApiResponse(
                     responseCode = "409",
-                    description = "Login já cadastrado",
+                    description = "Login ou empresa já cadastrados",
                     content = @Content
             )
     })
@@ -153,42 +174,14 @@ public class AuthenticationController {
             @RequestBody
             RegisterDTO request
     ) {
-        String normalizedLogin =
-                request.login()
-                        .trim()
-                        .toLowerCase();
-
-        if (
-                userRepository.existsByLogin(
-                        normalizedLogin
-                )
-        ) {
-            return ResponseEntity
-                    .status(HttpStatus.CONFLICT)
-                    .build();
-        }
-
-        String encodedPassword =
-                passwordEncoder.encode(
-                        request.password()
-                );
-
-        User user =
-                new User(
-                        normalizedLogin,
-                        encodedPassword,
-                        UserRole.USER
-                );
-
-        User savedUser =
-                userRepository.save(user);
+        RegisterResponseDTO response =
+                publicRegistrationService
+                        .register(
+                                request
+                        );
 
         return ResponseEntity
                 .status(HttpStatus.CREATED)
-                .body(
-                        RegisterResponseDTO.from(
-                                savedUser
-                        )
-                );
+                .body(response);
     }
 }

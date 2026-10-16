@@ -6,6 +6,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.OffsetDateTime;
 
 @Schema(
         description = "Dados retornados de uma vaga"
@@ -14,13 +15,13 @@ public record JobResponseDTO(
 
         @Schema(
                 description = "Código da vaga",
-                example = "1"
+                example = "29"
         )
         long code,
 
         @Schema(
                 description = "Nome da vaga",
-                example = "Analista de Sistemas"
+                example = "Analista de Sistemas Pleno"
         )
         String name,
 
@@ -37,8 +38,14 @@ public record JobResponseDTO(
         LocalDate expirationDate,
 
         @Schema(
+                description = "Data e hora de criação da vaga",
+                example = "2026-10-15T09:00:00-03:00"
+        )
+        OffsetDateTime createdAt,
+
+        @Schema(
                 description = "Salário",
-                example = "9500.00"
+                example = "12990.00"
         )
         BigDecimal salary,
 
@@ -64,6 +71,7 @@ public record JobResponseDTO(
                 job.getName(),
                 job.getDescription(),
                 job.getExpirationDate(),
+                job.getCreatedAt(),
                 job.getSalary(),
                 job.getContactEmail(),
                 CompanyResponseDTO.from(
