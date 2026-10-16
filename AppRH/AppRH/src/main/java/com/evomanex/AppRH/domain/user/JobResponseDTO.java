@@ -1,9 +1,15 @@
 package com.evomanex.AppRH.domain.user;
 
 import com.evomanex.AppRH.model.Job;
+
 import io.swagger.v3.oas.annotations.media.Schema;
 
-@Schema(description = "Dados retornados de uma vaga")
+import java.math.BigDecimal;
+import java.time.LocalDate;
+
+@Schema(
+        description = "Dados retornados de uma vaga"
+)
 public record JobResponseDTO(
 
         @Schema(
@@ -26,24 +32,43 @@ public record JobResponseDTO(
 
         @Schema(
                 description = "Data de expiração",
-                example = "2026-12-31"
+                example = "2027-12-31"
         )
-        String date,
+        LocalDate expirationDate,
 
         @Schema(
                 description = "Salário",
-                example = "5500.00"
+                example = "9500.00"
         )
-        String salary
+        BigDecimal salary,
+
+        @Schema(
+                description = "E-mail opcional para contato",
+                example = "vagas@empresa.com.br",
+                nullable = true
+        )
+        String contactEmail,
+
+        @Schema(
+                description = "Empresa responsável pela oportunidade"
+        )
+        CompanyResponseDTO company
+
 ) {
 
-    public static JobResponseDTO from(Job job) {
+    public static JobResponseDTO from(
+            Job job
+    ) {
         return new JobResponseDTO(
                 job.getCode(),
                 job.getName(),
                 job.getDescription(),
-                job.getDate(),
-                job.getSalary()
+                job.getExpirationDate(),
+                job.getSalary(),
+                job.getContactEmail(),
+                CompanyResponseDTO.from(
+                        job.getCompany()
+                )
         );
     }
 }
