@@ -5,13 +5,14 @@ import {
 
 import type {
   JobData,
+  JobRequestData,
 } from "../interfaces/JobData";
 
 import { api } from "../services/api";
 
 interface UpdateJobVariables {
   code: number;
-  job: Omit<JobData, "code">;
+  job: JobRequestData;
 }
 
 async function updateJob({
@@ -36,13 +37,15 @@ export function useUpdateJob() {
     mutationFn: updateJob,
 
     onSuccess: async () => {
-      await queryClient.invalidateQueries({
-        queryKey: ["managed-jobs"],
-      });
+      await Promise.all([
+        queryClient.invalidateQueries({
+          queryKey: ["jobs"],
+        }),
 
-      await queryClient.invalidateQueries({
-        queryKey: ["jobs"],
-      });
+        queryClient.invalidateQueries({
+          queryKey: ["managed-jobs"],
+        }),
+      ]);
     },
   });
 }

@@ -4,30 +4,21 @@ import jakarta.servlet.http.HttpServletResponse;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-
 import org.springframework.http.HttpMethod;
 
 import org.springframework.security.authentication.AuthenticationManager;
-
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
-
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
-
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
-
 import org.springframework.security.config.http.SessionCreationPolicy;
-
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
-
 import org.springframework.security.web.SecurityFilterChain;
-
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
-
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import java.util.List;
@@ -42,8 +33,7 @@ public class SecurityConfigurations {
     public SecurityConfigurations(
             SecurityFilter securityFilter
     ) {
-        this.securityFilter =
-                securityFilter;
+        this.securityFilter = securityFilter;
     }
 
     @Bean
@@ -53,19 +43,12 @@ public class SecurityConfigurations {
 
         return httpSecurity
 
-                /*
-                 * Configura o CORS entre frontend e backend.
-                 */
                 .cors(cors ->
                         cors.configurationSource(
                                 corsConfigurationSource()
                         )
                 )
 
-                /*
-                 * A API utiliza JWT e não depende
-                 * de sessão HTTP ou formulário.
-                 */
                 .csrf(csrf ->
                         csrf.disable()
                 )
@@ -76,17 +59,14 @@ public class SecurityConfigurations {
                         )
                 )
 
-                /*
-                 * Regras de autenticação e autorização.
-                 *
-                 * A ordem vai das rotas mais específicas
-                 * para a regra genérica final.
-                 */
                 .authorizeHttpRequests(authorize ->
                         authorize
 
                                 /*
-                                 * Endpoints públicos de autenticação.
+                                 * Login e cadastro público.
+                                 *
+                                 * O cadastro público permite somente
+                                 * os perfis USER e USERRH.
                                  */
                                 .requestMatchers(
                                         HttpMethod.POST,
@@ -95,8 +75,7 @@ public class SecurityConfigurations {
                                 ).permitAll()
 
                                 /*
-                                 * Recursos necessários para carregar
-                                 * o Swagger e o contrato OpenAPI.
+                                 * Swagger e OpenAPI.
                                  */
                                 .requestMatchers(
                                         "/swagger-ui.html",
@@ -107,28 +86,18 @@ public class SecurityConfigurations {
                                 ).permitAll()
 
                                 /*
-                                 * Permite que erros sejam processados
-                                 * pelo Spring sem bloqueio adicional.
+                                 * Endpoint interno de erros.
                                  */
                                 .requestMatchers(
                                         "/error"
                                 ).permitAll()
 
                                 /*
-                                 * Empresa associada ao perfil RH.
+                                 * Consulta pública das empresas.
                                  *
-                                 * A URL exige ROLE_USERRH.
-                                 * O service ainda verifica se a role
-                                 * efetiva é exatamente USERRH.
-                                 */
-                                .requestMatchers(
-                                        "/api/rh/company",
-                                        "/api/rh/company/**"
-                                ).hasRole("USERRH")
-
-                                /*
-                                 * Catálogo de empresas disponível
-                                 * para qualquer usuário autenticado.
+                                 * Necessária para que a página pública
+                                 * de cadastro carregue as empresas antes
+                                 * de o usuário possuir um token.
                                  */
                                 .requestMatchers(
                                         HttpMethod.GET,
@@ -137,8 +106,17 @@ public class SecurityConfigurations {
                                 ).permitAll()
 
                                 /*
-                                 * Catálogo de vagas disponível
-                                 * para qualquer usuário autenticado.
+                                 * Consulta e vínculo da empresa
+                                 * do usuário de RH autenticado.
+                                 */
+                                .requestMatchers(
+                                        "/api/rh/company",
+                                        "/api/rh/company/**"
+                                ).hasRole("USERRH")
+
+                                /*
+                                 * Catálogo de vagas disponível para
+                                 * qualquer usuário autenticado.
                                  */
                                 .requestMatchers(
                                         HttpMethod.GET,
@@ -148,10 +126,10 @@ public class SecurityConfigurations {
 
                                 /*
                                  * Gestão de vagas disponível para
-                                 * ADMIN e USERRH.
+                                 * USERRH e ADMIN.
                                  *
-                                 * O ADMIN possui ROLE_USERRH na
-                                 * hierarquia atual das authorities.
+                                 * ADMIN também possui ROLE_USERRH
+                                 * nas authorities do modelo atual.
                                  */
                                 .requestMatchers(
                                         "/api/management/jobs",
@@ -159,8 +137,7 @@ public class SecurityConfigurations {
                                 ).hasRole("USERRH")
 
                                 /*
-                                 * Recursos administrativos exclusivos
-                                 * do perfil ADMIN.
+                                 * Endpoints administrativos.
                                  */
                                 .requestMatchers(
                                         "/api/admin",
@@ -168,24 +145,15 @@ public class SecurityConfigurations {
                                 ).hasRole("ADMIN")
 
                                 /*
-                                 * Qualquer outra rota exige uma
-                                 * autenticação válida.
+                                 * Esta deve ser sempre a última regra.
                                  */
                                 .anyRequest()
                                 .authenticated()
                 )
 
-                /*
-                 * Respostas padronizadas dos erros
-                 * produzidos na cadeia de segurança.
-                 */
                 .exceptionHandling(exceptionHandling ->
                         exceptionHandling
 
-                                /*
-                                 * Retornado quando não existe
-                                 * autenticação válida.
-                                 */
                                 .authenticationEntryPoint(
                                         (
                                                 request,
@@ -219,11 +187,6 @@ public class SecurityConfigurations {
                                         }
                                 )
 
-                                /*
-                                 * Retornado quando o usuário está
-                                 * autenticado, mas não possui a
-                                 * autoridade exigida pela URL.
-                                 */
                                 .accessDeniedHandler(
                                         (
                                                 request,
@@ -258,10 +221,6 @@ public class SecurityConfigurations {
                                 )
                 )
 
-                /*
-                 * Executa a validação JWT antes do filtro
-                 * padrão de autenticação do Spring.
-                 */
                 .addFilterBefore(
                         securityFilter,
                         UsernamePasswordAuthenticationFilter.class
@@ -275,8 +234,7 @@ public class SecurityConfigurations {
             AuthenticationConfiguration configuration
     ) throws Exception {
 
-        return configuration
-                .getAuthenticationManager();
+        return configuration.getAuthenticationManager();
     }
 
     @Bean
@@ -285,26 +243,17 @@ public class SecurityConfigurations {
     }
 
     @Bean
-    public CorsConfigurationSource
-    corsConfigurationSource() {
+    public CorsConfigurationSource corsConfigurationSource() {
 
         CorsConfiguration configuration =
                 new CorsConfiguration();
 
-        /*
-         * Frontend Vite durante o desenvolvimento.
-         */
         configuration.setAllowedOrigins(
                 List.of(
                         "http://localhost:5173"
                 )
         );
 
-        /*
-         * PATCH já fica liberado para futuras
-         * atualizações parciais de usuários,
-         * empresas e outros recursos.
-         */
         configuration.setAllowedMethods(
                 List.of(
                         "GET",
@@ -330,18 +279,10 @@ public class SecurityConfigurations {
                 )
         );
 
-        /*
-         * O JWT é enviado pelo header Authorization.
-         * A aplicação não utiliza cookie JSESSIONID.
-         */
         configuration.setAllowCredentials(
                 false
         );
 
-        /*
-         * Mantém a resposta do preflight CORS em
-         * cache por uma hora.
-         */
         configuration.setMaxAge(
                 3600L
         );

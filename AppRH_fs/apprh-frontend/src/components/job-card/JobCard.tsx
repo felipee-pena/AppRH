@@ -6,6 +6,10 @@ import type {
   JobData,
 } from "../../interfaces/JobData";
 
+import {
+  JobDetailsModal,
+} from "../job-details-modal/JobDetailsModal";
+
 import "./job-card.css";
 
 interface JobCardProps {
@@ -15,97 +19,162 @@ interface JobCardProps {
   onDelete?: (code: number) => void;
 }
 
+function formatCurrency(
+  value: number
+): string {
+  return new Intl.NumberFormat(
+    "pt-BR",
+    {
+      style: "currency",
+      currency: "BRL",
+    }
+  ).format(value);
+}
+
+function formatDate(
+  value?: string
+): string {
+  if (!value) {
+    return "Não informada";
+  }
+
+  const datePart =
+    value.includes("T")
+      ? value.split("T")[0]
+      : value;
+
+  const [
+    year,
+    month,
+    day,
+  ] = datePart.split("-");
+
+  if (
+    !year ||
+    !month ||
+    !day
+  ) {
+    return value;
+  }
+
+  return `${day}/${month}/${year}`;
+}
+
 export function JobCard({
   job,
   showManagementActions = false,
   onEdit,
   onDelete,
 }: JobCardProps) {
-  const [isExpanded, setIsExpanded] =
-    useState(false);
+  const [
+    isDetailsOpen,
+    setIsDetailsOpen,
+  ] = useState(false);
 
   return (
-    <article className="job-card">
-      <header className="job-card__header">
-        <span className="job-card__badge">
-          Oportunidade
-        </span>
+    <>
+      <article className="job-card">
+        <button
+          type="button"
+          className="job-card__content-button"
+          onClick={() => {
+            setIsDetailsOpen(true);
+          }}
+        >
+          <header className="job-card__header">
+            <span className="job-card__badge">
+              Oportunidade
+            </span>
 
-        <h2>{job.name}</h2>
-      </header>
+            <h2>{job.name}</h2>
 
-      <p
-        className={
-          isExpanded
-            ? "job-card__description "
-                + "job-card__description--expanded"
-            : "job-card__description"
-        }
-      >
-        {job.description}
-      </p>
+            <p className="job-card__company">
+              {job.company?.name
+                ?? "Empresa não informada"}
+            </p>
+          </header>
 
-      <button
-        type="button"
-        className="job-card__details-button"
-        onClick={() => {
-          setIsExpanded(
-            (currentValue) =>
-              !currentValue
-          );
-        }}
-      >
-        {isExpanded
-          ? "Mostrar menos"
-          : "Ver descrição completa"}
-      </button>
+          <p className="job-card__description">
+            {job.description}
+          </p>
 
-      <div className="job-card__information">
-        <p>
-          <strong>Salário:</strong>{" "}
-          {job.salary}
-        </p>
+          <div className="job-card__information">
+            <p>
+              <span>Salário</span>
 
-        <p>
-          <strong>Data:</strong>{" "}
-          {job.date}
-        </p>
-      </div>
+              <strong>
+                {formatCurrency(
+                  job.salary
+                )}
+              </strong>
+            </p>
 
-      {showManagementActions && (
-        <footer className="job-card__actions">
-          {onEdit && (
-            <button
-              type="button"
-              className={
-                "job-card__action "
-                + "job-card__action--edit"
-              }
-              onClick={() => {
-                onEdit(job);
-              }}
-            >
-              Editar
-            </button>
-          )}
+            <p>
+              <span>Publicada em</span>
 
-          {onDelete &&
-            job.code !== undefined && (
+              <strong>
+                {formatDate(
+                  job.createdAt
+                )}
+              </strong>
+            </p>
+
+            <p>
+              <span>Expira em</span>
+
+              <strong>
+                {formatDate(
+                  job.expirationDate
+                )}
+              </strong>
+            </p>
+          </div>
+
+          <span className="job-card__details-button">
+            Ver detalhes da vaga
+          </span>
+        </button>
+
+        {showManagementActions && (
+          <footer className="job-card__actions">
+            {onEdit && (
               <button
                 type="button"
-                className={
-                  "job-card__action "
-                  + "job-card__action--delete"
-                }
+                className="job-card__action job-card__action--edit"
                 onClick={() => {
-                  onDelete(job.code);
+                  onEdit(job);
                 }}
               >
-                Excluir
+                Editar
               </button>
             )}
-        </footer>
+
+            {onDelete &&
+              job.code !== undefined && (
+                <button
+                  type="button"
+                  className="job-card__action job-card__action--delete"
+                  onClick={() => {
+                    onDelete(
+                      job.code as number
+                    );
+                  }}
+                >
+                  Excluir
+                </button>
+              )}
+          </footer>
+        )}
+      </article>
+
+      {isDetailsOpen && (
+        <JobDetailsModal
+          job={job}
+          onClose={() => {
+            setIsDetailsOpen(false);
+          }}
+        />
       )}
-    </article>
+    </>
   );
 }

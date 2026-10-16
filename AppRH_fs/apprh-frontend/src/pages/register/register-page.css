@@ -1,0 +1,258 @@
+.register-card {
+  width: 100%;
+  max-width: 480px;
+  max-height: none;
+  overflow: visible;
+}
+
+.register-role {
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.register-role legend {
+  margin-bottom: 10px;
+  color: #cbd5e1;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.register-role__options {
+  display: grid;
+  grid-template-columns:
+    repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.register-role__option {
+  display: grid;
+  gap: 5px;
+  min-height: 84px;
+  padding: 14px;
+  border:
+    1px solid rgba(148, 163, 184, 0.18);
+  border-radius: 12px;
+  color: #94a3b8;
+  text-align: left;
+  background:
+    rgba(15, 23, 42, 0.55);
+  cursor: pointer;
+  transition:
+    border-color 160ms ease,
+    background-color 160ms ease,
+    transform 160ms ease;
+}
+
+.register-role__option:hover {
+  border-color:
+    rgba(129, 140, 248, 0.38);
+  background:
+    rgba(79, 70, 229, 0.1);
+  transform: translateY(-1px);
+}
+
+.register-role__option strong {
+  color: #e2e8f0;
+  font-size: 14px;
+}
+
+.register-role__option span {
+  color: #94a3b8;
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.register-role__option--active {
+  border-color:
+    rgba(129, 140, 248, 0.72);
+  background:
+    rgba(79, 70, 229, 0.2);
+  box-shadow:
+    0 0 0 1px
+    rgba(129, 140, 248, 0.13);
+}
+
+.register-role__option--active strong {
+  color: #ffffff;
+}
+
+.register-company {
+  display: grid;
+  gap: 16px;
+  padding: 18px;
+  border:
+    1px solid rgba(148, 163, 184, 0.16);
+  border-radius: 14px;
+  background:
+    rgba(15, 23, 42, 0.35);
+}
+
+.register-company__header {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: flex-start;
+}
+
+.register-company__header strong {
+  color: #e2e8f0;
+  font-size: 14px;
+}
+
+.register-company__header p {
+  margin: 5px 0 0;
+  color: #94a3b8;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.register-company__toggle {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  color: #cbd5e1;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.register-company__toggle input {
+  flex: 0 0 auto;
+  width: 17px;
+  height: 17px;
+  accent-color: #6366f1;
+}
+
+.register-company select {
+  width: 100%;
+  min-height: 52px;
+  padding: 0 42px 0 14px;
+  border:
+    1px solid rgba(148, 163, 184, 0.2);
+  border-radius: 11px;
+  color: #e2e8f0;
+  font: inherit;
+  font-size: 14px;
+  background-color: #091329;
+  cursor: pointer;
+}
+
+.register-company select:focus {
+  border-color:
+    rgba(129, 140, 248, 0.7);
+  outline: 2px solid
+    rgba(99, 102, 241, 0.3);
+  outline-offset: 1px;
+}
+
+.register-company select:disabled {
+  cursor: not-allowed;
+  opacity: 0.65;
+}
+
+.register-company select option {
+  color: #e2e8f0;
+  background: #0f172a;
+}
+
+/*
+ * Estas classes são utilizadas caso o cadastro
+ * ainda esteja renderizando a lista personalizada.
+ *
+ * A rolagem ocorre somente dentro da lista de
+ * empresas, nunca no card inteiro.
+ */
+.register-company__list {
+  display: grid;
+  max-height: 220px;
+  overflow-x: hidden;
+  overflow-y: auto;
+  border:
+    1px solid rgba(148, 163, 184, 0.16);
+  border-radius: 12px;
+  scrollbar-width: thin;
+  scrollbar-color:
+    rgba(129, 140, 248, 0.55)
+    rgba(15, 23, 42, 0.4);
+}
+
+.register-company__list::-webkit-scrollbar {
+  width: 7px;
+}
+
+.register-company__list::-webkit-scrollbar-track {
+  background:
+    rgba(15, 23, 42, 0.4);
+}
+
+.register-company__list::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background:
+    rgba(129, 140, 248, 0.55);
+}
+
+.register-company__item {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: center;
+  min-height: 48px;
+  padding: 0 14px;
+  border: 0;
+  border-bottom:
+    1px solid rgba(148, 163, 184, 0.1);
+  color: #cbd5e1;
+  text-align: left;
+  background:
+    rgba(15, 23, 42, 0.5);
+  cursor: pointer;
+}
+
+.register-company__item:last-child {
+  border-bottom: 0;
+}
+
+.register-company__item:hover {
+  color: #ffffff;
+  background:
+    rgba(99, 102, 241, 0.12);
+}
+
+.register-company__item--selected {
+  color: #ffffff;
+  background:
+    rgba(79, 70, 229, 0.22);
+}
+
+.register-company__item strong {
+  color: #a5b4fc;
+  font-size: 11px;
+}
+
+.register-company__status {
+  margin: 0;
+  padding: 10px 2px;
+  color: #94a3b8;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.register-company__status--error {
+  color: #fca5a5;
+}
+
+@media (max-width: 900px) {
+  .register-card {
+    max-width: 100%;
+  }
+}
+
+@media (max-width: 620px) {
+  .register-role__options {
+    grid-template-columns: 1fr;
+  }
+
+  .register-company {
+    padding: 15px;
+  }
+}
