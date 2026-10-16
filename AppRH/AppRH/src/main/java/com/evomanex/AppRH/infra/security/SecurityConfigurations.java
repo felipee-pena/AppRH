@@ -8,20 +8,26 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
 
 import org.springframework.security.authentication.AuthenticationManager;
+
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
+
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
+
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+
 import org.springframework.security.config.http.SessionCreationPolicy;
 
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import org.springframework.security.web.SecurityFilterChain;
+
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
+
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import java.util.List;
@@ -36,7 +42,8 @@ public class SecurityConfigurations {
     public SecurityConfigurations(
             SecurityFilter securityFilter
     ) {
-        this.securityFilter = securityFilter;
+        this.securityFilter =
+                securityFilter;
     }
 
     @Bean
@@ -49,103 +56,134 @@ public class SecurityConfigurations {
                 /*
                  * Configura o CORS entre frontend e backend.
                  */
-                .cors(cors -> cors.configurationSource(
-                        corsConfigurationSource()
-                ))
+                .cors(cors ->
+                        cors.configurationSource(
+                                corsConfigurationSource()
+                        )
+                )
 
                 /*
-                 * A API usa JWT e não depende de sessão ou formulário.
+                 * A API utiliza JWT e não depende
+                 * de sessão HTTP ou formulário.
                  */
-                .csrf(csrf -> csrf.disable())
+                .csrf(csrf ->
+                        csrf.disable()
+                )
 
-                .sessionManagement(session -> session
-                        .sessionCreationPolicy(
+                .sessionManagement(session ->
+                        session.sessionCreationPolicy(
                                 SessionCreationPolicy.STATELESS
                         )
                 )
 
                 /*
                  * Regras de autenticação e autorização.
+                 *
+                 * A ordem vai das rotas mais específicas
+                 * para a regra genérica final.
                  */
-                .authorizeHttpRequests(authorize -> authorize
+                .authorizeHttpRequests(authorize ->
+                        authorize
 
-                        /*
-                         * Login e cadastro ficam públicos.
-                         *
-                         * O cadastro público deve criar
-                         * exclusivamente usuários USER.
-                         */
-                        .requestMatchers(
-                                HttpMethod.POST,
-                                "/auth/login",
-                                "/auth/register"
-                        ).permitAll()
-
-                        /*
-                         * Swagger e OpenAPI ficam disponíveis
-                         * somente para ADMIN.
-                         */
+                                /*
+                                 * Endpoints públicos de autenticação.
+                                 */
                                 .requestMatchers(
-                                        "/swagg***ui.html",
+                                        HttpMethod.POST,
+                                        "/auth/login",
+                                        "/auth/register"
+                                ).permitAll()
+
+                                /*
+                                 * Recursos necessários para carregar
+                                 * o Swagger e o contrato OpenAPI.
+                                 */
+                                .requestMatchers(
+                                        "/swagger-ui.html",
                                         "/swagger-ui/**",
                                         "/v3/api-docs",
                                         "/v3/api-docs/**",
-                                        "/v3/ap***ocs.yaml"
-                         ).permitAll()
+                                        "/v3/api-docs.yaml"
+                                ).permitAll()
 
-                        /*
-                         * Endpoint interno de tratamento de erros.
-                         */
-                        .requestMatchers(
-                                "/error"
-                        ).permitAll()
+                                /*
+                                 * Permite que erros sejam processados
+                                 * pelo Spring sem bloqueio adicional.
+                                 */
+                                .requestMatchers(
+                                        "/error"
+                                ).permitAll()
 
-                        /*
-                         * Catálogo de vagas.
-                         *
-                         * Todos os usuários autenticados podem
-                         * consultar as vagas.
-                         */
-                        .requestMatchers(
-                                HttpMethod.GET,
-                                "/api/jobs",
-                                "/api/jobs/**"
-                        ).authenticated()
+                                /*
+                                 * Empresa associada ao perfil RH.
+                                 *
+                                 * A URL exige ROLE_USERRH.
+                                 * O service ainda verifica se a role
+                                 * efetiva é exatamente USERRH.
+                                 */
+                                .requestMatchers(
+                                        "/api/rh/company",
+                                        "/api/rh/company/**"
+                                ).hasRole("USERRH")
 
-                        /*
-                         * Gestão de vagas.
-                         *
-                         * USERRH pode gerenciar suas vagas.
-                         * ADMIN também acessa porque possui
-                         * ROLE_USERRH no getAuthorities().
-                         */
-                        .requestMatchers(
-                                "/api/management/jobs",
-                                "/api/management/jobs/**"
-                        ).hasRole("USERRH")
+                                /*
+                                 * Catálogo de empresas disponível
+                                 * para qualquer usuário autenticado.
+                                 */
+                                .requestMatchers(
+                                        HttpMethod.GET,
+                                        "/api/companies",
+                                        "/api/companies/**"
+                                ).authenticated()
 
-                        /*
-                         * Endpoints exclusivamente administrativos.
-                         */
-                        .requestMatchers(
-                                "/api/admin",
-                                "/api/admin/**"
-                        ).hasRole("ADMIN")
+                                /*
+                                 * Catálogo de vagas disponível
+                                 * para qualquer usuário autenticado.
+                                 */
+                                .requestMatchers(
+                                        HttpMethod.GET,
+                                        "/api/jobs",
+                                        "/api/jobs/**"
+                                ).authenticated()
 
-                        /*
-                         * Qualquer outro endpoint exige autenticação.
-                         */
-                        .anyRequest().authenticated()
+                                /*
+                                 * Gestão de vagas disponível para
+                                 * ADMIN e USERRH.
+                                 *
+                                 * O ADMIN possui ROLE_USERRH na
+                                 * hierarquia atual das authorities.
+                                 */
+                                .requestMatchers(
+                                        "/api/management/jobs",
+                                        "/api/management/jobs/**"
+                                ).hasRole("USERRH")
+
+                                /*
+                                 * Recursos administrativos exclusivos
+                                 * do perfil ADMIN.
+                                 */
+                                .requestMatchers(
+                                        "/api/admin",
+                                        "/api/admin/**"
+                                ).hasRole("ADMIN")
+
+                                /*
+                                 * Qualquer outra rota exige uma
+                                 * autenticação válida.
+                                 */
+                                .anyRequest()
+                                .authenticated()
                 )
 
                 /*
-                 * Respostas padronizadas para erros de segurança.
+                 * Respostas padronizadas dos erros
+                 * produzidos na cadeia de segurança.
                  */
                 .exceptionHandling(exceptionHandling ->
                         exceptionHandling
 
                                 /*
-                                 * Retornado quando não existe uma
+                                 * Retornado quando não existe
                                  * autenticação válida.
                                  */
                                 .authenticationEntryPoint(
@@ -173,7 +211,8 @@ public class SecurityConfigurations {
                                                             """
                                                             {
                                                               "status": 401,
-                                                              "message": "Autenticação necessária"
+                                                              "message": "Autenticação necessária",
+                                                              "errors": {}
                                                             }
                                                             """
                                                     );
@@ -182,7 +221,8 @@ public class SecurityConfigurations {
 
                                 /*
                                  * Retornado quando o usuário está
-                                 * autenticado, mas não possui a role.
+                                 * autenticado, mas não possui a
+                                 * autoridade exigida pela URL.
                                  */
                                 .accessDeniedHandler(
                                         (
@@ -209,7 +249,8 @@ public class SecurityConfigurations {
                                                             """
                                                             {
                                                               "status": 403,
-                                                              "message": "Acesso negado"
+                                                              "message": "Acesso negado",
+                                                              "errors": {}
                                                             }
                                                             """
                                                     );
@@ -218,7 +259,7 @@ public class SecurityConfigurations {
                 )
 
                 /*
-                 * Executa o filtro JWT antes do filtro
+                 * Executa a validação JWT antes do filtro
                  * padrão de autenticação do Spring.
                  */
                 .addFilterBefore(
@@ -234,7 +275,8 @@ public class SecurityConfigurations {
             AuthenticationConfiguration configuration
     ) throws Exception {
 
-        return configuration.getAuthenticationManager();
+        return configuration
+                .getAuthenticationManager();
     }
 
     @Bean
@@ -243,7 +285,8 @@ public class SecurityConfigurations {
     }
 
     @Bean
-    public CorsConfigurationSource corsConfigurationSource() {
+    public CorsConfigurationSource
+    corsConfigurationSource() {
 
         CorsConfiguration configuration =
                 new CorsConfiguration();
@@ -252,14 +295,22 @@ public class SecurityConfigurations {
          * Frontend Vite durante o desenvolvimento.
          */
         configuration.setAllowedOrigins(
-                List.of("http://localhost:5173")
+                List.of(
+                        "http://localhost:5173"
+                )
         );
 
+        /*
+         * PATCH já fica liberado para futuras
+         * atualizações parciais de usuários,
+         * empresas e outros recursos.
+         */
         configuration.setAllowedMethods(
                 List.of(
                         "GET",
                         "POST",
                         "PUT",
+                        "PATCH",
                         "DELETE",
                         "OPTIONS"
                 )
@@ -274,19 +325,26 @@ public class SecurityConfigurations {
         );
 
         configuration.setExposedHeaders(
-                List.of("Authorization")
+                List.of(
+                        "Authorization"
+                )
         );
 
         /*
          * O JWT é enviado pelo header Authorization.
-         * A aplicação não usa cookie JSESSIONID.
+         * A aplicação não utiliza cookie JSESSIONID.
          */
-        configuration.setAllowCredentials(false);
+        configuration.setAllowCredentials(
+                false
+        );
 
         /*
-         * Cache da resposta de preflight CORS.
+         * Mantém a resposta do preflight CORS em
+         * cache por uma hora.
          */
-        configuration.setMaxAge(3600L);
+        configuration.setMaxAge(
+                3600L
+        );
 
         UrlBasedCorsConfigurationSource source =
                 new UrlBasedCorsConfigurationSource();

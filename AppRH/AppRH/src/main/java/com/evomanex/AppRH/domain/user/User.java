@@ -1,5 +1,11 @@
 package com.evomanex.AppRH.domain.user;
 
+import com.evomanex.AppRH.model.Company;
+
+import jakarta.persistence.FetchType;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -48,6 +54,13 @@ public class User implements UserDetails {
             length = 10
     )
     private UserRole role;
+    @ManyToOne(
+            fetch = FetchType.LAZY
+    )
+    @JoinColumn(
+            name = "company_id"
+    )
+    private Company company;
 
     public User(
             String login,
@@ -105,4 +118,14 @@ public class User implements UserDetails {
     public boolean isEnabled() {
         return true;
     }
+    public Company getCompany() {
+        return company;
+    }
+
+    public void setCompany(
+            Company company
+    ) {
+        this.company = company;
+    }
+
 }
