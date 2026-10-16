@@ -134,7 +134,7 @@ public class SecurityConfigurations {
                                         HttpMethod.GET,
                                         "/api/companies",
                                         "/api/companies/**"
-                                ).authenticated()
+                                ).permitAll()
 
                                 /*
                                  * Catálogo de vagas disponível
