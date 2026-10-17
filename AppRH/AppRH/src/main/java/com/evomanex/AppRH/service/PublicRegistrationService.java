@@ -5,23 +5,17 @@ import com.evomanex.AppRH.domain.user.RegisterDTO;
 import com.evomanex.AppRH.domain.user.RegisterResponseDTO;
 import com.evomanex.AppRH.domain.user.User;
 import com.evomanex.AppRH.domain.user.UserRole;
-
 import com.evomanex.AppRH.model.Company;
-
 import com.evomanex.AppRH.repository.CompanyRepository;
 import com.evomanex.AppRH.repository.UserRepository;
 
 import org.springframework.http.HttpStatus;
-
 import org.springframework.security.crypto.password.PasswordEncoder;
-
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
 import org.springframework.web.server.ResponseStatusException;
 
 import java.text.Normalizer;
-
 import java.util.Locale;
 
 @Service
@@ -31,12 +25,14 @@ public class PublicRegistrationService {
     private final CompanyRepository companyRepository;
     private final CompanyService companyService;
     private final PasswordEncoder passwordEncoder;
+    private final EmailVerificationService emailVerificationService;
 
     public PublicRegistrationService(
             UserRepository userRepository,
             CompanyRepository companyRepository,
             CompanyService companyService,
-            PasswordEncoder passwordEncoder
+            PasswordEncoder passwordEncoder,
+            EmailVerificationService emailVerificationService
     ) {
         this.userRepository =
                 userRepository;
@@ -49,6 +45,9 @@ public class PublicRegistrationService {
 
         this.passwordEncoder =
                 passwordEncoder;
+
+        this.emailVerificationService =
+                emailVerificationService;
     }
 
     @Transactional
@@ -93,6 +92,11 @@ public class PublicRegistrationService {
         User savedUser =
                 userRepository.saveAndFlush(
                         user
+                );
+
+        emailVerificationService
+                .createVerificationToken(
+                        savedUser
                 );
 
         return RegisterResponseDTO.from(

@@ -33,4 +33,12 @@ public interface UserRepository
    boolean existsByLoginIgnoreCase(
            String login
    );
+   @EntityGraph(
+           attributePaths = {
+                   "company"
+           }
+   )
+   Optional<User> findByLoginIgnoreCase(
+           String login
+   );
 }
