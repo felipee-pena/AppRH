@@ -30,7 +30,7 @@ public interface UserRepository
            String id
    );
 
-   boolean existsByLogin(
+   boolean existsByLoginIgnoreCase(
            String login
    );
 }

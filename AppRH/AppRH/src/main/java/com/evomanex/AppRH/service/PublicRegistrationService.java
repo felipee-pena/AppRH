@@ -5,15 +5,22 @@ import com.evomanex.AppRH.domain.user.RegisterDTO;
 import com.evomanex.AppRH.domain.user.RegisterResponseDTO;
 import com.evomanex.AppRH.domain.user.User;
 import com.evomanex.AppRH.domain.user.UserRole;
+
 import com.evomanex.AppRH.model.Company;
+
 import com.evomanex.AppRH.repository.CompanyRepository;
 import com.evomanex.AppRH.repository.UserRepository;
 
 import org.springframework.http.HttpStatus;
+
 import org.springframework.security.crypto.password.PasswordEncoder;
+
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
 import org.springframework.web.server.ResponseStatusException;
+
+import java.text.Normalizer;
 
 import java.util.Locale;
 
@@ -53,16 +60,9 @@ public class PublicRegistrationService {
                         request.login()
                 );
 
-        if (
-                userRepository.existsByLogin(
-                        normalizedLogin
-                )
-        ) {
-            throw new ResponseStatusException(
-                    HttpStatus.CONFLICT,
-                    "Já existe um usuário com este login"
-            );
-        }
+        validateDuplicatedLogin(
+                normalizedLogin
+        );
 
         UserRole userRole =
                 resolveUserRole(
@@ -100,67 +100,78 @@ public class PublicRegistrationService {
         );
     }
 
+    private void validateDuplicatedLogin(
+            String normalizedLogin
+    ) {
+        boolean loginAlreadyExists =
+                userRepository
+                        .existsByLoginIgnoreCase(
+                                normalizedLogin
+                        );
+
+        if (loginAlreadyExists) {
+            throw new ResponseStatusException(
+                    HttpStatus.CONFLICT,
+                    "Já existe um usuário com este login"
+            );
+        }
+    }
+
     private UserRole resolveUserRole(
             PublicRegistrationRole role
     ) {
-        if (
-                role == PublicRegistrationRole.USER
-        ) {
-            return UserRole.USER;
-        }
+        return switch (role) {
+            case USER ->
+                    UserRole.USER;
 
-        if (
-                role == PublicRegistrationRole.USERRH
-        ) {
-            return UserRole.USERRH;
-        }
-
-        /*
-         * O enum público possui somente USER
-         * e USERRH. Esta proteção mantém a regra
-         * explícita no domínio.
-         */
-        throw new ResponseStatusException(
-                HttpStatus.BAD_REQUEST,
-                "Perfil público inválido"
-        );
+            case USERRH ->
+                    UserRole.USERRH;
+        };
     }
 
     private Company resolveCompany(
             RegisterDTO request
     ) {
-        /*
-         * Candidatos não pertencem a empresas.
-         */
-        if (
-                request.role()
-                        == PublicRegistrationRole.USER
-        ) {
-            if (
-                    request.companyId() != null
-                            || hasText(
-                            request.newCompanyName()
-                    )
-            ) {
-                throw new ResponseStatusException(
-                        HttpStatus.BAD_REQUEST,
-                        "Candidatos não devem informar empresa"
-                );
-            }
+        return switch (request.role()) {
+            case USER ->
+                    resolveCandidateCompany(
+                            request
+                    );
 
-            return null;
+            case USERRH ->
+                    resolveRhCompany(
+                            request
+                    );
+        };
+    }
+
+    private Company resolveCandidateCompany(
+            RegisterDTO request
+    ) {
+        boolean hasCompanyId =
+                request.companyId() != null;
+
+        boolean hasNewCompanyName =
+                hasText(
+                        request.newCompanyName()
+                );
+
+        if (
+                hasCompanyId
+                        || hasNewCompanyName
+        ) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Candidatos não devem informar empresa"
+            );
         }
 
-        /*
-         * A partir deste ponto, o perfil é USERRH.
-         *
-         * O cadastro precisa indicar:
-         *
-         * 1. uma empresa existente por companyId; ou
-         * 2. uma empresa nova por newCompanyName.
-         *
-         * As duas opções simultaneamente não são aceitas.
-         */
+        return null;
+    }
+
+    private Company resolveRhCompany(
+            RegisterDTO request
+    ) {
         boolean hasCompanyId =
                 request.companyId() != null;
 
@@ -191,31 +202,28 @@ public class PublicRegistrationService {
             );
         }
 
-        /*
-         * Empresa existente selecionada no frontend.
-         */
         if (hasCompanyId) {
-            return companyService
-                    .findEntityById(
-                            request.companyId()
-                    );
+            return companyService.findEntityById(
+                    request.companyId()
+            );
         }
 
-        /*
-         * Nova empresa informada no cadastro.
-         *
-         * Antes de criar, o backend procura pelo nome
-         * normalizado para evitar duplicidade por diferença
-         * de letras maiúsculas, minúsculas ou espaços.
-         */
+        return resolveNewCompany(
+                request.newCompanyName()
+        );
+    }
+
+    private Company resolveNewCompany(
+            String requestedName
+    ) {
         String displayName =
                 normalizeDisplayName(
-                        request.newCompanyName()
+                        requestedName
                 );
 
         String normalizedName =
                 normalizeCompanyName(
-                        request.newCompanyName()
+                        displayName
                 );
 
         return companyRepository
@@ -223,10 +231,11 @@ public class PublicRegistrationService {
                         normalizedName
                 )
                 .orElseGet(
-                        () -> createCompany(
-                                displayName,
-                                normalizedName
-                        )
+                        () ->
+                                createCompany(
+                                        displayName,
+                                        normalizedName
+                                )
                 );
     }
 
@@ -234,7 +243,8 @@ public class PublicRegistrationService {
             String displayName,
             String normalizedName
     ) {
-        Company company = new Company();
+        Company company =
+                new Company();
 
         company.setName(
                 displayName
@@ -273,11 +283,26 @@ public class PublicRegistrationService {
     private String normalizeCompanyName(
             String name
     ) {
-        return normalizeDisplayName(
-                name
-        ).toLowerCase(
-                Locale.ROOT
-        );
+        String displayName =
+                normalizeDisplayName(
+                        name
+                );
+
+        String withoutAccents =
+                Normalizer
+                        .normalize(
+                                displayName,
+                                Normalizer.Form.NFD
+                        )
+                        .replaceAll(
+                                "\\p{M}+",
+                                ""
+                        );
+
+        return withoutAccents
+                .toLowerCase(
+                        Locale.ROOT
+                );
     }
 
     private boolean hasText(
