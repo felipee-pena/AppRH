@@ -25,6 +25,7 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
 import java.util.Collection;
+import java.time.OffsetDateTime;
 import java.util.List;
 
 @Table(
@@ -70,7 +71,20 @@ public class User implements UserDetails {
         this.login = login;
         this.password = password;
         this.role = role;
+        this.status =
+                UserStatus.PENDING_EMAIL_CONFIRMATION;
     }
+    @Enumerated(EnumType.STRING)
+    @Column(
+            nullable = false,
+            length = 40
+    )
+    private UserStatus status;
+
+    @Column(
+            name = "email_verified_at"
+    )
+    private OffsetDateTime emailVerifiedAt;
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
@@ -106,7 +120,9 @@ public class User implements UserDetails {
 
     @Override
     public boolean isAccountNonLocked() {
-        return true;
+        return status != UserStatus.BLOCKED
+                && status != UserStatus.REJECTED
+                && status != UserStatus.DELETED;
     }
 
     @Override
@@ -116,7 +132,7 @@ public class User implements UserDetails {
 
     @Override
     public boolean isEnabled() {
-        return true;
+        return status == UserStatus.ACTIVE;
     }
     public Company getCompany() {
         return company;
@@ -127,5 +143,40 @@ public class User implements UserDetails {
     ) {
         this.company = company;
     }
+    public void confirmEmail() {
+        this.emailVerifiedAt =
+                OffsetDateTime.now();
+
+        if (
+                this.role == UserRole.USERRH
+        ) {
+            this.status =
+                    UserStatus.PENDING_APPROVAL;
+
+            return;
+        }
+
+        this.status =
+                UserStatus.ACTIVE;
+    }
+
+    public boolean isEmailVerified() {
+        return emailVerifiedAt != null;
+    }
+
+    public boolean isPendingEmailConfirmation() {
+        return status
+                == UserStatus
+                .PENDING_EMAIL_CONFIRMATION;
+    }
+
+    public UserStatus getStatus() {
+        return status;
+    }
+
+    public OffsetDateTime getEmailVerifiedAt() {
+        return emailVerifiedAt;
+    }
+
 
 }
