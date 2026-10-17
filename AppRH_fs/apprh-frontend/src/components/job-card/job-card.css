@@ -266,3 +266,75 @@
   background:
     rgba(127, 29, 29, 0.16);
 }
+
+.job-card__content-button {
+  display: grid;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  color: inherit;
+  text-align: left;
+  background: transparent;
+  cursor: pointer;
+}
+
+.job-card__company {
+  margin: 6px 0 0;
+  color: #a5b4fc;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.job-card__description {
+  display: -webkit-box;
+  overflow: hidden;
+  line-height: 1.65;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 4;
+}
+
+.job-card__information {
+  display: grid;
+  grid-template-columns:
+    repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 18px;
+}
+
+.job-card__information p {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+}
+
+.job-card__information span {
+  color: #64748b;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.job-card__information strong {
+  color: #e2e8f0;
+  font-size: 13px;
+}
+
+.job-card__details-button {
+  width: fit-content;
+  margin-top: 18px;
+  color: #a5b4fc;
+  font-size: 13px;
+  font-weight: 750;
+}
+
+.job-card__content-button:hover
+.job-card__details-button {
+  color: #ffffff;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+
+@media (max-width: 580px) {
+  .job-card__information {
+    grid-template-columns: 1fr;
+  }
+}

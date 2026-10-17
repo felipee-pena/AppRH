@@ -5,7 +5,6 @@ import com.evomanex.AppRH.domain.user.CompanyAssociationRequestDTO;
 import com.evomanex.AppRH.domain.user.RhCompanyResponseDTO;
 import com.evomanex.AppRH.domain.user.User;
 import com.evomanex.AppRH.service.RhCompanyService;
-
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -13,14 +12,10 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
-
 import jakarta.validation.Valid;
-
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -29,22 +24,14 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/api/rh/company")
-@Tag(
-        name = "Empresa do RH",
-        description = "Consulta e vinculação da empresa do usuário de RH"
-)
-@SecurityRequirement(
-        name = OpenApiConfig.SECURITY_SCHEME_NAME
-)
+@Tag(name = "Empresa do RH", description = "Consulta e vinculação da empresa do usuário de RH")
+@SecurityRequirement(name = OpenApiConfig.SECURITY_SCHEME_NAME)
 public class RhCompanyController {
 
     private final RhCompanyService rhCompanyService;
 
-    public RhCompanyController(
-            RhCompanyService rhCompanyService
-    ) {
-        this.rhCompanyService =
-                rhCompanyService;
+    public RhCompanyController(RhCompanyService rhCompanyService) {
+        this.rhCompanyService = rhCompanyService;
     }
 
     @GetMapping
@@ -58,54 +45,29 @@ public class RhCompanyController {
                     description = "Empresa retornada com sucesso",
                     content = @Content(
                             mediaType = "application/json",
-                            schema = @Schema(
-                                    implementation =
-                                            RhCompanyResponseDTO.class
-                            )
+                            schema = @Schema(implementation = RhCompanyResponseDTO.class)
                     )
             ),
-            @ApiResponse(
-                    responseCode = "401",
-                    description = "Autenticação necessária",
-                    content = @Content
-            ),
-            @ApiResponse(
-                    responseCode = "403",
-                    description = "Perfil sem permissão",
-                    content = @Content
-            ),
-            @ApiResponse(
-                    responseCode = "404",
-                    description = "Usuário de RH sem empresa",
-                    content = @Content
-            )
+            @ApiResponse(responseCode = "401", description = "Autenticação necessária", content = @Content),
+            @ApiResponse(responseCode = "403", description = "Perfil sem permissão", content = @Content),
+            @ApiResponse(responseCode = "404", description = "Usuário de RH sem empresa", content = @Content)
     })
-    public ResponseEntity<RhCompanyResponseDTO>
-    findCurrentCompany(
-            @AuthenticationPrincipal
-            User authenticatedUser
-    ) {
-        RhCompanyResponseDTO response =
-                rhCompanyService
-                        .findCurrentCompany(
-                                authenticatedUser
-                        );
+    public ResponseEntity<RhCompanyResponseDTO> findCurrentCompany(@AuthenticationPrincipal User authenticatedUser) {
+        RhCompanyResponseDTO response = rhCompanyService.findCurrentCompany(authenticatedUser);
 
-        return ResponseEntity.ok(
-                response
-        );
+        return ResponseEntity.ok(response);
     }
 
     @PostMapping
     @Operation(
             summary = "Vincular empresa ao RH",
             description = """
-                    Localiza uma empresa pelo nome normalizado.
+        Localiza uma empresa pelo nome normalizado.
 
-                    Se a empresa existir, vincula ao usuário de RH.
+        Se a empresa existir, vincula ao usuário de RH.
 
-                    Se não existir, cria a empresa e realiza o vínculo.
-                    """
+        Se não existir, cria a empresa e realiza o vínculo.
+        """
     )
     @ApiResponses({
             @ApiResponse(
@@ -113,10 +75,7 @@ public class RhCompanyController {
                     description = "Empresa existente vinculada",
                     content = @Content(
                             mediaType = "application/json",
-                            schema = @Schema(
-                                    implementation =
-                                            RhCompanyResponseDTO.class
-                            )
+                            schema = @Schema(implementation = RhCompanyResponseDTO.class)
                     )
             ),
             @ApiResponse(
@@ -124,56 +83,22 @@ public class RhCompanyController {
                     description = "Empresa criada e vinculada",
                     content = @Content(
                             mediaType = "application/json",
-                            schema = @Schema(
-                                    implementation =
-                                            RhCompanyResponseDTO.class
-                            )
+                            schema = @Schema(implementation = RhCompanyResponseDTO.class)
                     )
             ),
-            @ApiResponse(
-                    responseCode = "400",
-                    description = "Dados inválidos",
-                    content = @Content
-            ),
-            @ApiResponse(
-                    responseCode = "401",
-                    description = "Autenticação necessária",
-                    content = @Content
-            ),
-            @ApiResponse(
-                    responseCode = "403",
-                    description = "Perfil sem permissão",
-                    content = @Content
-            ),
-            @ApiResponse(
-                    responseCode = "409",
-                    description = "Usuário já possui empresa",
-                    content = @Content
-            )
+            @ApiResponse(responseCode = "400", description = "Dados inválidos", content = @Content),
+            @ApiResponse(responseCode = "401", description = "Autenticação necessária", content = @Content),
+            @ApiResponse(responseCode = "403", description = "Perfil sem permissão", content = @Content),
+            @ApiResponse(responseCode = "409", description = "Usuário já possui empresa", content = @Content)
     })
-    public ResponseEntity<RhCompanyResponseDTO>
-    associateCompany(
-            @Valid
-            @RequestBody
-            CompanyAssociationRequestDTO request,
-
-            @AuthenticationPrincipal
-            User authenticatedUser
+    public ResponseEntity<RhCompanyResponseDTO> associateCompany(
+            @Valid @RequestBody CompanyAssociationRequestDTO request,
+            @AuthenticationPrincipal User authenticatedUser
     ) {
-        RhCompanyResponseDTO response =
-                rhCompanyService
-                        .associateCompany(
-                                request,
-                                authenticatedUser
-                        );
+        RhCompanyResponseDTO response = rhCompanyService.associateCompany(request, authenticatedUser);
 
-        HttpStatus status =
-                response.created()
-                        ? HttpStatus.CREATED
-                        : HttpStatus.OK;
+        HttpStatus status = response.created() ? HttpStatus.CREATED : HttpStatus.OK;
 
-        return ResponseEntity
-                .status(status)
-                .body(response);
+        return ResponseEntity.status(status).body(response);
     }
 }

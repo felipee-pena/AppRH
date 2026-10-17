@@ -299,3 +299,52 @@ body.modal-open {
     width: 100%;
   }
 }
+
+.job-modal__readonly {
+  min-height: 46px;
+  padding: 13px 14px;
+  border:
+    1px solid rgba(129, 140, 248, 0.22);
+  border-radius: 10px;
+  color: #c7d2fe;
+  font-size: 14px;
+  background:
+    rgba(79, 70, 229, 0.1);
+}
+
+.job-modal__company-list {
+  display: grid;
+  max-height: 190px;
+  overflow-y: auto;
+  border:
+    1px solid rgba(148, 163, 184, 0.16);
+  border-radius: 10px;
+}
+
+.job-modal__company-option {
+  min-height: 44px;
+  padding: 0 14px;
+  border: 0;
+  border-bottom:
+    1px solid rgba(148, 163, 184, 0.1);
+  color: #cbd5e1;
+  text-align: left;
+  background: rgba(15, 23, 42, 0.5);
+  cursor: pointer;
+}
+
+.job-modal__company-option:last-child {
+  border-bottom: 0;
+}
+
+.job-modal__company-option:hover {
+  color: #ffffff;
+  background:
+    rgba(99, 102, 241, 0.12);
+}
+
+.job-modal__company-option--selected {
+  color: #ffffff;
+  background:
+    rgba(79, 70, 229, 0.24);
+}

@@ -5,15 +5,13 @@ import {
 
 import type {
   JobData,
+  JobRequestData,
 } from "../interfaces/JobData";
 
 import { api } from "../services/api";
 
-type CreateJobRequest =
-  Omit<JobData, "code">;
-
 async function createJob(
-  job: CreateJobRequest
+  job: JobRequestData
 ): Promise<JobData> {
   const response =
     await api.post<JobData>(
@@ -32,13 +30,15 @@ export function useCreateJob() {
     mutationFn: createJob,
 
     onSuccess: async () => {
-      await queryClient.invalidateQueries({
-        queryKey: ["managed-jobs"],
-      });
+      await Promise.all([
+        queryClient.invalidateQueries({
+          queryKey: ["jobs"],
+        }),
 
-      await queryClient.invalidateQueries({
-        queryKey: ["jobs"],
-      });
+        queryClient.invalidateQueries({
+          queryKey: ["managed-jobs"],
+        }),
+      ]);
     },
   });
 }

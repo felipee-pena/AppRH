@@ -1,0 +1,234 @@
+.job-details__overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  background:
+    rgba(2, 6, 23, 0.84);
+  backdrop-filter: blur(12px);
+}
+
+.job-details {
+  display: flex;
+  flex-direction: column;
+  width:
+    min(
+      1100px,
+      calc(100vw - 32px)
+    );
+  max-height:
+    calc(100vh - 32px);
+  overflow: hidden;
+  border:
+    1px solid rgba(148, 163, 184, 0.2);
+  border-radius: 22px;
+  color: #e2e8f0;
+  background:
+    linear-gradient(
+      145deg,
+      #111c34,
+      #081126
+    );
+  box-shadow:
+    0 30px 90px
+    rgba(0, 0, 0, 0.48);
+}
+
+.job-details__header {
+  display: flex;
+  justify-content: space-between;
+  gap: 24px;
+  align-items: flex-start;
+  padding: 28px 30px;
+  border-bottom:
+    1px solid rgba(148, 163, 184, 0.13);
+}
+
+.job-details__eyebrow {
+  color: #818cf8;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.job-details__header h2 {
+  margin: 9px 0 7px;
+  color: #ffffff;
+  font-size:
+    clamp(24px, 4vw, 38px);
+  line-height: 1.15;
+}
+
+.job-details__header p {
+  margin: 0;
+  color: #a5b4fc;
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.job-details__close {
+  display: grid;
+  flex: 0 0 auto;
+  width: 42px;
+  height: 42px;
+  place-items: center;
+  border:
+    1px solid rgba(148, 163, 184, 0.2);
+  border-radius: 12px;
+  color: #cbd5e1;
+  font-size: 25px;
+  background:
+    rgba(15, 23, 42, 0.65);
+  cursor: pointer;
+}
+
+.job-details__close:hover {
+  color: #ffffff;
+  background:
+    rgba(99, 102, 241, 0.16);
+}
+
+.job-details__summary {
+  display: grid;
+  grid-template-columns:
+    repeat(4, minmax(0, 1fr));
+  gap: 14px;
+  padding: 24px 30px;
+}
+
+.job-details__summary article {
+  display: grid;
+  gap: 7px;
+  padding: 17px;
+  border:
+    1px solid rgba(148, 163, 184, 0.13);
+  border-radius: 14px;
+  background:
+    rgba(15, 23, 42, 0.48);
+}
+
+.job-details__summary span,
+.job-details__contact span {
+  color: #94a3b8;
+  font-size: 12px;
+  font-weight: 650;
+}
+
+.job-details__summary strong {
+  color: #f8fafc;
+  font-size: 15px;
+}
+
+.job-details__contact {
+  display: grid;
+  gap: 5px;
+  margin: 0 30px 22px;
+  padding: 16px 18px;
+  border:
+    1px solid rgba(99, 102, 241, 0.2);
+  border-radius: 14px;
+  background:
+    rgba(79, 70, 229, 0.1);
+}
+
+.job-details__contact a {
+  width: fit-content;
+  color: #c7d2fe;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.job-details__contact a:hover {
+  text-decoration: underline;
+}
+
+.job-details__description {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  margin: 0 30px;
+  padding: 24px;
+  border:
+    1px solid rgba(148, 163, 184, 0.13);
+  border-radius: 16px;
+  background:
+    rgba(15, 23, 42, 0.35);
+}
+
+.job-details__description h3 {
+  margin: 0 0 16px;
+  color: #ffffff;
+  font-size: 18px;
+}
+
+.job-details__description p {
+  margin: 0;
+  color: #cbd5e1;
+  font-size: 15px;
+  line-height: 1.8;
+  white-space: pre-wrap;
+}
+
+.job-details__footer {
+  display: flex;
+  justify-content: flex-end;
+  padding: 22px 30px;
+}
+
+.job-details__footer button {
+  min-height: 44px;
+  padding: 0 20px;
+  border: 0;
+  border-radius: 11px;
+  color: #ffffff;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 750;
+  background:
+    linear-gradient(
+      135deg,
+      #4f46e5,
+      #7c3aed
+    );
+  cursor: pointer;
+}
+
+@media (max-width: 850px) {
+  .job-details__summary {
+    grid-template-columns:
+      repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 540px) {
+  .job-details__overlay {
+    padding: 0;
+  }
+
+  .job-details {
+    width: 100vw;
+    max-height: 100vh;
+    min-height: 100vh;
+    border-radius: 0;
+  }
+
+  .job-details__header,
+  .job-details__summary,
+  .job-details__footer {
+    padding-right: 18px;
+    padding-left: 18px;
+  }
+
+  .job-details__summary {
+    grid-template-columns: 1fr;
+  }
+
+  .job-details__contact,
+  .job-details__description {
+    margin-right: 18px;
+    margin-left: 18px;
+  }
+}
