@@ -21,7 +21,9 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
-
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authentication.DisabledException;
+import org.springframework.security.authentication.LockedException;
 import org.springframework.web.server.ResponseStatusException;
 
 import org.springframework.web.servlet.resource.NoResourceFoundException;
@@ -37,6 +39,56 @@ public class GlobalExceptionHandler {
             LoggerFactory.getLogger(
                     GlobalExceptionHandler.class
             );
+    @ExceptionHandler(DisabledException.class)
+    public ResponseEntity<ApiErrorResponseDTO>
+    handleDisabledAccount(
+            DisabledException exception
+    ) {
+        ApiErrorResponseDTO response =
+                new ApiErrorResponseDTO(
+                        HttpStatus.UNAUTHORIZED.value(),
+                        "Confirme seu e-mail ou aguarde a aprovação da conta",
+                        Map.of()
+                );
+
+        return ResponseEntity
+                .status(HttpStatus.UNAUTHORIZED)
+                .body(response);
+    }
+
+    @ExceptionHandler(LockedException.class)
+    public ResponseEntity<ApiErrorResponseDTO>
+    handleLockedAccount(
+            LockedException exception
+    ) {
+        ApiErrorResponseDTO response =
+                new ApiErrorResponseDTO(
+                        HttpStatus.FORBIDDEN.value(),
+                        "A conta está bloqueada",
+                        Map.of()
+                );
+
+        return ResponseEntity
+                .status(HttpStatus.FORBIDDEN)
+                .body(response);
+    }
+
+    @ExceptionHandler(BadCredentialsException.class)
+    public ResponseEntity<ApiErrorResponseDTO>
+    handleBadCredentials(
+            BadCredentialsException exception
+    ) {
+        ApiErrorResponseDTO response =
+                new ApiErrorResponseDTO(
+                        HttpStatus.UNAUTHORIZED.value(),
+                        "Login ou senha inválidos",
+                        Map.of()
+                );
+
+        return ResponseEntity
+                .status(HttpStatus.UNAUTHORIZED)
+                .body(response);
+    }
 
     @ExceptionHandler(
             MethodArgumentNotValidException.class

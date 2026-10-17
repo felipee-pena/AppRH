@@ -5,6 +5,7 @@ import com.evomanex.AppRH.model.Company;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import java.time.OffsetDateTime;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -178,5 +179,20 @@ public class User implements UserDetails {
         return emailVerifiedAt;
     }
 
+    public String getId() {
+        return id;
+    }
 
+    public String getLogin() {
+        return login;
+    }
+
+    @Override
+    public String getPassword() {
+        return password;
+    }
+
+    public UserRole getRole() {
+        return role;
+    }
 }
