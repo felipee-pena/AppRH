@@ -5,6 +5,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
+import jakarta.validation.constraints.Email;
 
 @Schema(
         description = "Dados para cadastro público de candidato ou profissional de RH"
@@ -12,18 +13,23 @@ import jakarta.validation.constraints.Size;
 public record RegisterDTO(
 
         @Schema(
-                description = "Login do usuário",
-                example = "usuario@apprh.local"
+                description = "E-mail utilizado como login",
+                example = "usuario@empresa.com.br"
         )
         @NotBlank(
                 message = "Informe o login"
+        )
+        @Email(
+                message = "Informe um e-mail válido"
         )
         @Size(
                 max = 255,
                 message = "O login deve possuir no máximo 255 caracteres"
         )
         String login,
-
+        @Email(
+                message = "Informe um e-mail válido"
+        )
         @Schema(
                 description = "Senha do usuário",
                 example = "Usuario@123"
