@@ -6,6 +6,8 @@ import com.evomanex.AppRH.model.EmailVerificationToken;
 import com.evomanex.AppRH.repository.EmailVerificationTokenRepository;
 import com.evomanex.AppRH.repository.UserRepository;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -27,6 +29,10 @@ import java.util.Locale;
 
 @Service
 public class EmailVerificationService {
+    private static final Logger LOGGER =
+            LoggerFactory.getLogger(
+                    EmailVerificationService.class
+            );
 
     private static final int TOKEN_BYTES =
             32;
@@ -94,6 +100,26 @@ public class EmailVerificationService {
                                         TOKEN_VALIDITY_HOURS
                                 )
                 );
+        tokenRepository.save(
+                token
+        );
+
+        LOGGER.info(
+                "Token de confirmação criado para {}",
+                user.getLogin()
+        );
+
+        eventPublisher.publishEvent(
+                new EmailVerificationRequestedEvent(
+                        user.getLogin(),
+                        rawToken
+                )
+        );
+
+        LOGGER.info(
+                "Evento de verificação publicado para {}",
+                user.getLogin()
+        );
 
         tokenRepository.save(
                 token
