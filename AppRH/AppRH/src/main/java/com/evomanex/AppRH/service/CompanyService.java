@@ -36,10 +36,11 @@ public class CompanyService {
         return companyRepository
                 .findById(id)
                 .orElseThrow(
-                        () -> new ResponseStatusException(
-                                HttpStatus.NOT_FOUND,
-                                "Empresa não encontrada"
-                        )
+                        () ->
+                                new ResponseStatusException(
+                                        HttpStatus.NOT_FOUND,
+                                        "Empresa não encontrada"
+                                )
                 );
     }
 }
