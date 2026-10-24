@@ -1,0 +1,47 @@
+version: 2
+
+updates:
+  - package-ecosystem: "maven"
+    directory: "/AppRH/AppRH"
+
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+      timezone: "America/Sao_Paulo"
+
+    open-pull-requests-limit: 5
+
+    labels:
+      - "dependencies"
+      - "backend"
+
+    commit-message:
+      prefix: "chore(deps)"
+
+    groups:
+      spring:
+        patterns:
+          - "org.springframework*"
+          - "org.springframework.boot*"
+          - "org.springframework.security*"
+
+      testing:
+        dependency-type: "development"
+        patterns:
+          - "org.junit*"
+          - "org.mockito*"
+          - "org.testcontainers*"
+          - "org.jacoco*"
+
+  - package-ecosystem: "github-actions"
+    directory: "/"
+
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:30"
+      timezone: "America/Sao_Paulo"
+
+    commit-message:
+      prefix: "chore(actions)"

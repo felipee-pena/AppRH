@@ -8,10 +8,15 @@ import com.evomanex.AppRH.repository.UserRepository;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 import org.springframework.context.ApplicationEventPublisher;
+
 import org.springframework.http.HttpStatus;
+
 import org.springframework.stereotype.Service;
+
 import org.springframework.transaction.annotation.Transactional;
+
 import org.springframework.web.server.ResponseStatusException;
 
 import java.nio.charset.StandardCharsets;
@@ -29,6 +34,7 @@ import java.util.Locale;
 
 @Service
 public class EmailVerificationService {
+
     private static final Logger LOGGER =
             LoggerFactory.getLogger(
                     EmailVerificationService.class
@@ -100,6 +106,7 @@ public class EmailVerificationService {
                                         TOKEN_VALIDITY_HOURS
                                 )
                 );
+
         tokenRepository.save(
                 token
         );
@@ -119,17 +126,6 @@ public class EmailVerificationService {
         LOGGER.info(
                 "Evento de verificação publicado para {}",
                 user.getLogin()
-        );
-
-        tokenRepository.save(
-                token
-        );
-
-        eventPublisher.publishEvent(
-                new EmailVerificationRequestedEvent(
-                        user.getLogin(),
-                        rawToken
-                )
         );
     }
 
@@ -195,6 +191,7 @@ public class EmailVerificationService {
         }
 
         user.confirmEmail();
+
         token.markAsUsed();
 
         userRepository.save(
