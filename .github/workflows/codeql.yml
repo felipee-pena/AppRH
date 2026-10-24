@@ -1,0 +1,96 @@
+name: CodeQL Security Analysis
+
+on:
+  push:
+    branches:
+      - main
+      - "release/**"
+
+  pull_request:
+    branches:
+      - main
+      - "release/**"
+
+  schedule:
+    - cron: "30 6 * * 1"
+
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  security-events: write
+  packages: read
+
+jobs:
+  codeql:
+    name: CodeQL Java Analysis
+    runs-on: ubuntu-latest
+
+    timeout-minutes: 20
+
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_DB: apprh_codeql
+          POSTGRES_USER: apprh_codeql
+          POSTGRES_PASSWORD: apprh_codeql_password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U apprh_codeql -d apprh_codeql"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+
+    env:
+      PORTA: 8081
+
+      DB_URL: jdbc:postgresql://localhost:5432/apprh_codeql
+      DB_USER: apprh_codeql
+      DB_PASSWORD: apprh_codeql_password
+
+      JWT_SECRET: codeql-test-secret-with-at-least-32-characters
+
+      FRONTEND_URL: http://localhost:5173
+
+      MAIL_HOST: localhost
+      MAIL_PORT: 2525
+      MAIL_USERNAME: codeql-test
+      MAIL_PASSWORD: codeql-test
+      MAIL_FROM: no-reply@apprh.test
+      MAIL_TEST_RECIPIENT: ""
+
+      SPRING_MAIL_TEST_CONNECTION: "false"
+
+    defaults:
+      run:
+        working-directory: AppRH/AppRH
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Set up Java 22
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "22"
+          cache: maven
+          cache-dependency-path: AppRH/AppRH/pom.xml
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v4
+        with:
+          languages: java-kotlin
+
+      - name: Grant permission to Maven Wrapper
+        run: chmod +x mvnw
+
+      - name: Build project
+        run: ./mvnw --batch-mode clean package -DskipTests
+
+      - name: Run CodeQL analysis
+        uses: github/codeql-action/analyze@v4
+        with:
+          category: "/language:java-kotlin"
