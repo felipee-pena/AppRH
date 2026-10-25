@@ -1,12 +1,21 @@
 import {
+  useCallback,
   useEffect,
   useState,
   type FormEvent,
 } from "react";
-import { createPortal } from "react-dom";
 
-import type { JobData } from "../../interfaces/JobData";
-import { useUpdateJob } from "../../hooks/useUpdateJob";
+import {
+  createPortal,
+} from "react-dom";
+
+import type {
+  JobData,
+} from "../../interfaces/JobData";
+
+import {
+  useUpdateJob,
+} from "../../hooks/useUpdateJob";
 
 import "../create-job-modal/create-job-modal.css";
 
@@ -19,11 +28,40 @@ export function EditJobModal({
   job,
   closeModal,
 }: EditJobModalProps) {
-  const [name, setName] = useState(job.name);
-  const [description, setDescription] =
-    useState(job.description);
-  const [date, setDate] = useState(job.date);
-  const [salary, setSalary] = useState(job.salary);
+  const [name, setName] =
+    useState(
+      job.name
+    );
+
+  const [
+    description,
+    setDescription,
+  ] =
+    useState(
+      job.description
+    );
+
+  const [
+    expirationDate,
+    setExpirationDate,
+  ] =
+    useState(
+      job.expirationDate
+    );
+
+  const [salary, setSalary] =
+    useState<number>(
+      job.salary
+    );
+
+  const [
+    contactEmail,
+    setContactEmail,
+  ] =
+    useState(
+      job.contactEmail
+      ?? ""
+    );
 
   const {
     mutate,
@@ -32,61 +70,113 @@ export function EditJobModal({
     isError,
     error,
     reset,
-  } = useUpdateJob();
+  } =
+    useUpdateJob();
 
-  function submit(event: FormEvent<HTMLFormElement>) {
+  function submit(
+    event: FormEvent<HTMLFormElement>
+  ) {
     event.preventDefault();
 
-    if (job.code === undefined) {
+    if (
+      job.code === undefined
+    ) {
       return;
     }
 
     mutate({
-      code: job.code,
+      code:
+        job.code,
+
       job: {
-        code: job.code,
-        name: name.trim(),
-        description: description.trim(),
-        date,
+        name:
+          name.trim(),
+
+        description:
+          description.trim(),
+
+        expirationDate,
+
         salary,
+
+        contactEmail:
+          contactEmail.trim()
+            || null,
+
+        companyId:
+          job.company?.id
+          ?? null,
       },
     });
   }
 
-  function handleClose() {
-    if (isPending) {
-      return;
-    }
+  const handleClose =
+    useCallback(
+      () => {
+        if (isPending) {
+          return;
+        }
 
-    reset();
-    closeModal();
-  }
+        reset();
+        closeModal();
+      },
+      [
+        isPending,
+        reset,
+        closeModal,
+      ]
+    );
 
-  useEffect(() => {
-    document.body.classList.add("modal-open");
+  useEffect(
+    () => {
+      document.body.classList.add(
+        "modal-open"
+      );
 
-    function handleEscape(event: KeyboardEvent) {
-      if (event.key === "Escape" && !isPending) {
-        handleClose();
+      function handleEscape(
+        event: KeyboardEvent
+      ) {
+        if (
+          event.key === "Escape"
+          && !isPending
+        ) {
+          handleClose();
+        }
       }
-    }
 
-    window.addEventListener("keydown", handleEscape);
-
-    return () => {
-      document.body.classList.remove("modal-open");
-      window.removeEventListener(
+      window.addEventListener(
         "keydown",
         handleEscape
       );
-    };
-  }, [isPending]);
 
-  useEffect(() => {
-    if (isSuccess) {
-      closeModal();
-    }
-  }, [isSuccess, closeModal]);
+      return () => {
+        document.body.classList.remove(
+          "modal-open"
+        );
+
+        window.removeEventListener(
+          "keydown",
+          handleEscape
+        );
+      };
+    },
+    [
+      isPending,
+      handleClose,
+    ]
+  );
+
+  useEffect(
+    () => {
+      if (isSuccess) {
+        closeModal();
+      }
+    },
+    [
+      isSuccess,
+      closeModal,
+    ]
+  );
 
   return createPortal(
     <div
@@ -98,8 +188,9 @@ export function EditJobModal({
     >
       <section
         className="job-modal"
-        onMouseDown={(event) =>
-          event.stopPropagation()
+        onMouseDown={
+          (event) =>
+            event.stopPropagation()
         }
       >
         <header className="job-modal__header">
@@ -141,8 +232,12 @@ export function EditJobModal({
               id="edit-job-name"
               type="text"
               value={name}
-              onChange={(event) =>
-                setName(event.target.value)
+              disabled={isPending}
+              onChange={
+                (event) =>
+                  setName(
+                    event.target.value
+                  )
               }
               autoFocus
               required
@@ -157,9 +252,13 @@ export function EditJobModal({
             <input
               id="edit-job-date"
               type="date"
-              value={date}
-              onChange={(event) =>
-                setDate(event.target.value)
+              value={expirationDate}
+              disabled={isPending}
+              onChange={
+                (event) =>
+                  setExpirationDate(
+                    event.target.value
+                  )
               }
               required
             />
@@ -176,10 +275,42 @@ export function EditJobModal({
               min="0"
               step="0.01"
               value={salary}
-              onChange={(event) =>
-                setSalary(event.target.value)
+              disabled={isPending}
+              onChange={
+                (event) => {
+                  const numericValue =
+                    event.target.valueAsNumber;
+
+                  setSalary(
+                    Number.isNaN(
+                      numericValue
+                    )
+                      ? 0
+                      : numericValue
+                  );
+                }
               }
               required
+            />
+          </div>
+
+          <div className="job-modal__field">
+            <label htmlFor="edit-job-contact-email">
+              E-mail para contato
+            </label>
+
+            <input
+              id="edit-job-contact-email"
+              type="email"
+              value={contactEmail}
+              disabled={isPending}
+              onChange={
+                (event) =>
+                  setContactEmail(
+                    event.target.value
+                  )
+              }
+              placeholder="vagas@empresa.com"
             />
           </div>
 
@@ -193,8 +324,12 @@ export function EditJobModal({
               rows={5}
               maxLength={254}
               value={description}
-              onChange={(event) =>
-                setDescription(event.target.value)
+              disabled={isPending}
+              onChange={
+                (event) =>
+                  setDescription(
+                    event.target.value
+                  )
               }
               required
             />
@@ -205,7 +340,10 @@ export function EditJobModal({
           </div>
 
           {isError && (
-            <div className="job-modal__error">
+            <div
+              className="job-modal__error"
+              role="alert"
+            >
               <strong>
                 Não foi possível atualizar a vaga.
               </strong>
@@ -231,7 +369,13 @@ export function EditJobModal({
             <button
               type="submit"
               className="job-modal__button job-modal__button--primary"
-              disabled={isPending}
+              disabled={
+                isPending
+                || !name.trim()
+                || !description.trim()
+                || !expirationDate
+                || salary <= 0
+              }
             >
               {isPending
                 ? "Salvando..."

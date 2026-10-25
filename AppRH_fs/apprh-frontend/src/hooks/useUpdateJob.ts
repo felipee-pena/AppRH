@@ -8,7 +8,9 @@ import type {
   JobRequestData,
 } from "../interfaces/JobData";
 
-import { api } from "../services/api";
+import {
+  api,
+} from "../services/api";
 
 interface UpdateJobVariables {
   code: number;
@@ -18,8 +20,7 @@ interface UpdateJobVariables {
 async function updateJob({
   code,
   job,
-}: UpdateJobVariables):
-  Promise<JobData> {
+}: UpdateJobVariables): Promise<JobData> {
   const response =
     await api.put<JobData>(
       `/api/management/jobs/${code}`,
@@ -34,16 +35,21 @@ export function useUpdateJob() {
     useQueryClient();
 
   return useMutation({
-    mutationFn: updateJob,
+    mutationFn:
+      updateJob,
 
     onSuccess: async () => {
       await Promise.all([
         queryClient.invalidateQueries({
-          queryKey: ["jobs"],
+          queryKey: [
+            "jobs",
+          ],
         }),
 
         queryClient.invalidateQueries({
-          queryKey: ["managed-jobs"],
+          queryKey: [
+            "managed-jobs",
+          ],
         }),
       ]);
     },

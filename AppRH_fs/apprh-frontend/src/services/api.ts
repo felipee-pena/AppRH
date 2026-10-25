@@ -16,14 +16,17 @@ if (!API_BASE_URL) {
 
 export const api = axios.create({
   baseURL: API_BASE_URL,
+
   headers: {
+    Accept: "application/json",
     "Content-Type": "application/json",
   },
 });
 
 api.interceptors.request.use(
   (config) => {
-    const token = getAccessToken();
+    const token =
+      getAccessToken();
 
     if (token) {
       config.headers.Authorization =
@@ -38,19 +41,33 @@ api.interceptors.response.use(
   (response) => response,
 
   (error) => {
-    const isLoginRequest =
-      error.config?.url === "/auth/login";
+    const requestUrl =
+      error.config?.url ?? "";
+
+    const publicAuthenticationEndpoints = [
+      "/auth/login",
+      "/auth/register",
+      "/auth/email/confirm",
+      "/auth/email/resend",
+    ];
+
+    const isPublicAuthenticationRequest =
+      publicAuthenticationEndpoints.some(
+        (endpoint) =>
+          requestUrl.startsWith(endpoint)
+      );
 
     if (
-      error.response?.status === 401 &&
-      !isLoginRequest
+      error.response?.status === 401
+      && !isPublicAuthenticationRequest
     ) {
       removeAccessToken();
 
       if (
         window.location.pathname !== "/login"
       ) {
-        window.location.href = "/login";
+        window.location.href =
+          "/login";
       }
     }
 

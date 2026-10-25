@@ -50,9 +50,9 @@ function formatDate(
   ] = datePart.split("-");
 
   if (
-    !year ||
-    !month ||
-    !day
+    !year
+    || !month
+    || !day
   ) {
     return value;
   }
@@ -71,22 +71,46 @@ export function JobCard({
     setIsDetailsOpen,
   ] = useState(false);
 
+  function openDetails() {
+    setIsDetailsOpen(true);
+  }
+
+  function closeDetails() {
+    setIsDetailsOpen(false);
+  }
+
+  function handleEdit() {
+    onEdit?.(job);
+  }
+
+  function handleDelete() {
+    if (
+      job.code === undefined
+    ) {
+      return;
+    }
+
+    onDelete?.(job.code);
+  }
+
   return (
     <>
       <article className="job-card">
         <button
           type="button"
           className="job-card__content-button"
-          onClick={() => {
-            setIsDetailsOpen(true);
-          }}
+          aria-haspopup="dialog"
+          aria-expanded={isDetailsOpen}
+          onClick={openDetails}
         >
           <header className="job-card__header">
             <span className="job-card__badge">
               Oportunidade
             </span>
 
-            <h2>{job.name}</h2>
+            <h2>
+              {job.name}
+            </h2>
 
             <p className="job-card__company">
               {job.company?.name
@@ -100,7 +124,9 @@ export function JobCard({
 
           <div className="job-card__information">
             <p>
-              <span>Salário</span>
+              <span>
+                Salário
+              </span>
 
               <strong>
                 {formatCurrency(
@@ -110,7 +136,9 @@ export function JobCard({
             </p>
 
             <p>
-              <span>Publicada em</span>
+              <span>
+                Publicada em
+              </span>
 
               <strong>
                 {formatDate(
@@ -120,7 +148,9 @@ export function JobCard({
             </p>
 
             <p>
-              <span>Expira em</span>
+              <span>
+                Expira em
+              </span>
 
               <strong>
                 {formatDate(
@@ -141,24 +171,19 @@ export function JobCard({
               <button
                 type="button"
                 className="job-card__action job-card__action--edit"
-                onClick={() => {
-                  onEdit(job);
-                }}
+                onClick={handleEdit}
               >
                 Editar
               </button>
             )}
 
-            {onDelete &&
-              job.code !== undefined && (
+            {onDelete
+              && job.code !== undefined
+              && (
                 <button
                   type="button"
                   className="job-card__action job-card__action--delete"
-                  onClick={() => {
-                    onDelete(
-                      job.code as number
-                    );
-                  }}
+                  onClick={handleDelete}
                 >
                   Excluir
                 </button>
@@ -170,9 +195,7 @@ export function JobCard({
       {isDetailsOpen && (
         <JobDetailsModal
           job={job}
-          onClose={() => {
-            setIsDetailsOpen(false);
-          }}
+          onClose={closeDetails}
         />
       )}
     </>

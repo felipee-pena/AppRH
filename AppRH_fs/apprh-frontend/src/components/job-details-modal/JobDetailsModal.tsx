@@ -1,5 +1,7 @@
 import {
+  useCallback,
   useEffect,
+  type CSSProperties,
 } from "react";
 
 import {
@@ -10,12 +12,108 @@ import type {
   JobData,
 } from "../../interfaces/JobData";
 
-import "./job-details-modal.css";
-
 interface JobDetailsModalProps {
   job: JobData;
   onClose(): void;
 }
+
+const overlayStyle: CSSProperties = {
+  position: "fixed",
+  inset: 0,
+  zIndex: 2147483647,
+
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+
+  padding: "24px",
+
+  overflowY: "auto",
+
+  backgroundColor: "rgba(2, 6, 23, 0.82)",
+  backdropFilter: "blur(4px)",
+};
+
+const modalStyle: CSSProperties = {
+  position: "relative",
+
+  width: "min(720px, 100%)",
+  maxHeight: "calc(100vh - 48px)",
+
+  overflowY: "auto",
+
+  border: "1px solid #334155",
+  borderRadius: "20px",
+
+  color: "#f8fafc",
+  backgroundColor: "#111c31",
+
+  boxShadow:
+    "0 30px 80px rgba(0, 0, 0, 0.55)",
+};
+
+const headerStyle: CSSProperties = {
+  display: "flex",
+  alignItems: "flex-start",
+  justifyContent: "space-between",
+  gap: "24px",
+
+  padding: "28px 32px",
+
+  borderBottom: "1px solid #334155",
+};
+
+const closeButtonStyle: CSSProperties = {
+  width: "42px",
+  height: "42px",
+
+  flex: "0 0 42px",
+
+  border: "1px solid #475569",
+  borderRadius: "50%",
+
+  color: "#ffffff",
+  backgroundColor: "#1e293b",
+
+  cursor: "pointer",
+
+  fontSize: "24px",
+};
+
+const bodyStyle: CSSProperties = {
+  display: "grid",
+  gap: "28px",
+
+  padding: "32px",
+};
+
+const informationStyle: CSSProperties = {
+  display: "grid",
+  gridTemplateColumns:
+    "repeat(2, minmax(0, 1fr))",
+
+  gap: "16px",
+
+  margin: 0,
+};
+
+const informationItemStyle: CSSProperties = {
+  padding: "18px",
+
+  border: "1px solid #334155",
+  borderRadius: "14px",
+
+  backgroundColor: "#16233a",
+};
+
+const footerStyle: CSSProperties = {
+  display: "flex",
+  justifyContent: "flex-end",
+
+  padding: "20px 32px",
+
+  borderTop: "1px solid #334155",
+};
 
 function formatCurrency(
   value: number
@@ -33,7 +131,7 @@ function formatDate(
   value?: string
 ): string {
   if (!value) {
-    return "Não informado";
+    return "Não informada";
   }
 
   const datePart =
@@ -41,19 +139,18 @@ function formatDate(
       ? value.split("T")[0]
       : value;
 
+  const parts =
+    datePart.split("-");
+
+  if (parts.length !== 3) {
+    return value;
+  }
+
   const [
     year,
     month,
     day,
-  ] = datePart.split("-");
-
-  if (
-    !year ||
-    !month ||
-    !day
-  ) {
-    return value;
-  }
+  ] = parts;
 
   return `${day}/${month}/${year}`;
 }
@@ -62,61 +159,125 @@ export function JobDetailsModal({
   job,
   onClose,
 }: JobDetailsModalProps) {
-  useEffect(() => {
-    document.body.classList.add(
-      "modal-open"
-    );
-
-    function handleEscape(
-      event: KeyboardEvent
-    ) {
-      if (event.key === "Escape") {
+  const handleClose =
+    useCallback(
+      () => {
         onClose();
-      }
-    }
-
-    window.addEventListener(
-      "keydown",
-      handleEscape
+      },
+      [
+        onClose,
+      ]
     );
 
-    return () => {
-      document.body.classList.remove(
-        "modal-open"
-      );
+  useEffect(
+    () => {
+      const previousOverflow =
+        document.body.style.overflow;
 
-      window.removeEventListener(
+      document.body.style.overflow =
+        "hidden";
+
+      function handleEscape(
+        event: KeyboardEvent
+      ) {
+        if (event.key === "Escape") {
+          handleClose();
+        }
+      }
+
+      window.addEventListener(
         "keydown",
         handleEscape
       );
-    };
-  }, [onClose]);
+
+      return () => {
+        document.body.style.overflow =
+          previousOverflow;
+
+        document.body.classList.remove(
+          "modal-open"
+        );
+
+        window.removeEventListener(
+          "keydown",
+          handleEscape
+        );
+      };
+    },
+    [
+      handleClose,
+    ]
+  );
+
+  function handleContact() {
+    if (!job.contactEmail) {
+      return;
+    }
+
+    window.location.assign(
+      `mailto:${job.contactEmail}`
+    );
+  }
 
   return createPortal(
     <div
-      className="job-details__overlay"
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="job-details-title"
-      onMouseDown={onClose}
+      style={overlayStyle}
+      role="presentation"
+      data-testid="job-details-overlay"
+      onMouseDown={handleClose}
     >
-      <article
-        className="job-details"
-        onMouseDown={(event) => {
-          event.stopPropagation();
-        }}
+      <section
+        style={modalStyle}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="job-details-title"
+        onMouseDown={
+          (event) => {
+            event.stopPropagation();
+          }
+        }
       >
-        <header className="job-details__header">
+        <header style={headerStyle}>
           <div>
-            <span className="job-details__eyebrow">
+            <span
+              style={{
+                display: "block",
+
+                marginBottom: "8px",
+
+                color: "#4ade80",
+
+                fontSize: "12px",
+                fontWeight: 800,
+                letterSpacing: "0.08em",
+                textTransform: "uppercase",
+              }}
+            >
               Detalhes da oportunidade
             </span>
 
-            <h2 id="job-details-title">
+            <h2
+              id="job-details-title"
+              style={{
+                margin: 0,
+
+                color: "#ffffff",
+
+                fontSize: "28px",
+              }}
+            >
               {job.name}
             </h2>
 
-            <p>
+            <p
+              style={{
+                margin: "10px 0 0",
+
+                color: "#a5b4fc",
+
+                fontWeight: 700,
+              }}
+            >
               {job.company?.name
                 ?? "Empresa não informada"}
             </p>
@@ -124,94 +285,166 @@ export function JobDetailsModal({
 
           <button
             type="button"
-            className="job-details__close"
-            onClick={onClose}
-            aria-label="Fechar detalhes"
+            style={closeButtonStyle}
+            aria-label="Fechar detalhes da vaga"
+            onClick={handleClose}
           >
-            ×
+            X
           </button>
         </header>
 
-        <section className="job-details__summary">
-          <article>
-            <span>Salário</span>
+        <div style={bodyStyle}>
+          <section>
+            <h3
+              style={{
+                margin: "0 0 12px",
 
-            <strong>
-              {formatCurrency(
-                job.salary
-              )}
-            </strong>
-          </article>
-
-          <article>
-            <span>
-              Data de criação
-            </span>
-
-            <strong>
-              {formatDate(
-                job.createdAt
-              )}
-            </strong>
-          </article>
-
-          <article>
-            <span>
-              Data de expiração
-            </span>
-
-            <strong>
-              {formatDate(
-                job.expirationDate
-              )}
-            </strong>
-          </article>
-
-          <article>
-            <span>Empresa</span>
-
-            <strong>
-              {job.company?.name
-                ?? "Não informada"}
-            </strong>
-          </article>
-        </section>
-
-        {job.contactEmail && (
-          <section className="job-details__contact">
-            <span>
-              E-mail para contato
-            </span>
-
-            <a
-              href={
-                `mailto:${job.contactEmail}`
-              }
+                color: "#ffffff",
+              }}
             >
-              {job.contactEmail}
-            </a>
+              Descrição
+            </h3>
+
+            <p
+              style={{
+                margin: 0,
+
+                color: "#cbd5e1",
+
+                lineHeight: 1.75,
+                whiteSpace: "pre-wrap",
+              }}
+            >
+              {job.description}
+            </p>
           </section>
-        )}
 
-        <section className="job-details__description">
-          <h3>
-            Descrição da vaga
-          </h3>
+          <dl style={informationStyle}>
+            <div style={informationItemStyle}>
+              <dt>
+                Salário
+              </dt>
 
-          <p>
-            {job.description}
-          </p>
-        </section>
+              <dd
+                style={{
+                  margin: "8px 0 0",
+                  fontWeight: 700,
+                }}
+              >
+                {formatCurrency(
+                  job.salary
+                )}
+              </dd>
+            </div>
 
-        <footer className="job-details__footer">
+            <div style={informationItemStyle}>
+              <dt>
+                Publicada em
+              </dt>
+
+              <dd
+                style={{
+                  margin: "8px 0 0",
+                  fontWeight: 700,
+                }}
+              >
+                {formatDate(
+                  job.createdAt
+                )}
+              </dd>
+            </div>
+
+            <div style={informationItemStyle}>
+              <dt>
+                Expira em
+              </dt>
+
+              <dd
+                style={{
+                  margin: "8px 0 0",
+                  fontWeight: 700,
+                }}
+              >
+                {formatDate(
+                  job.expirationDate
+                )}
+              </dd>
+            </div>
+
+            <div style={informationItemStyle}>
+              <dt>
+                Empresa
+              </dt>
+
+              <dd
+                style={{
+                  margin: "8px 0 0",
+                  fontWeight: 700,
+                }}
+              >
+                {job.company?.name
+                  ?? "Não informada"}
+              </dd>
+            </div>
+          </dl>
+
+          {job.contactEmail && (
+            <section>
+              <h3
+                style={{
+                  margin: "0 0 12px",
+                }}
+              >
+                Contato
+              </h3>
+
+              <button
+                type="button"
+                onClick={handleContact}
+                style={{
+                  padding: 0,
+
+                  border: 0,
+
+                  color: "#a5b4fc",
+                  background: "transparent",
+
+                  cursor: "pointer",
+
+                  font: "inherit",
+                  fontWeight: 700,
+                }}
+              >
+                {job.contactEmail}
+              </button>
+            </section>
+          )}
+        </div>
+
+        <footer style={footerStyle}>
           <button
             type="button"
-            onClick={onClose}
+            onClick={handleClose}
+            style={{
+              minWidth: "110px",
+
+              padding: "12px 20px",
+
+              border: "1px solid #475569",
+              borderRadius: "10px",
+
+              color: "#ffffff",
+              backgroundColor: "#1e293b",
+
+              cursor: "pointer",
+
+              fontWeight: 700,
+            }}
           >
-            Fechar detalhes
+            Fechar
           </button>
         </footer>
-      </article>
+      </section>
     </div>,
     document.body
   );

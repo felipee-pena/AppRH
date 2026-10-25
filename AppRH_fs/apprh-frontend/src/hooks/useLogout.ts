@@ -1,12 +1,18 @@
-import { useMutation } from "@tanstack/react-query";
-import { api } from "../services/api";
+import {
+  useMutation,
+} from "@tanstack/react-query";
 
-async function logout(): promise<void> {
-  await api.post("/api/logout");
+import {
+  removeAccessToken,
+} from "../services/token-storage";
+
+async function logout(): Promise<void> {
+  removeAccessToken();
 }
 
 export function useLogout() {
   return useMutation({
-   mutationFn: logout,
+    mutationFn:
+      logout,
   });
 }

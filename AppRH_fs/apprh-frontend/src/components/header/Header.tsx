@@ -1,30 +1,53 @@
-import { NavLink, useNavigate } from "react-router-dom";
-import { useLogout } from "../../hooks/useLogout";
+import {
+  NavLink,
+  useNavigate,
+} from "react-router-dom";
+
+import {
+  useLogout,
+} from "../../hooks/useLogout";
 
 import "./header.css";
 
 export function Header() {
-  const navigate = useNavigate();
+  const navigate =
+    useNavigate();
 
   const {
+    mutate: logout,
     isPending,
-  } = useLogout();
+  } =
+    useLogout();
 
-  function handleLogout(){
-    logout(undefined, {
-      onSuccess: () => {
-        localStorage.clear();
-        sessionStorage.clear();
+  function handleLogout() {
+    logout(
+      undefined,
+      {
+        onSuccess: () => {
+          localStorage.clear();
+          sessionStorage.clear();
 
-        navigate("/");
-     },
+          navigate(
+            "/login",
+            {
+              replace: true,
+            }
+          );
+        },
 
-      onError: (error) => {        console.error("Erro ao sair:", error);
-      },
-    });
+        onError: (
+          error: Error
+        ) => {
+          console.error(
+            "Erro ao sair:",
+            error
+          );
+        },
+      }
+    );
   }
 
- const getLinkClass = ({
+  const getLinkClass = ({
     isActive,
   }: {
     isActive: boolean;
@@ -38,7 +61,7 @@ export function Header() {
     <header className="app-header">
       <div className="app-header__container">
         <NavLink
-          to="/"
+          to="/jobs"
           className="app-header__brand"
         >
           <span className="app-header__brand-icon">
@@ -55,18 +78,18 @@ export function Header() {
           aria-label="Navegação principal"
         >
           <NavLink
-            to="/"
+            to="/jobs"
             end
             className={getLinkClass}
           >
-            Dashboard
+            Vagas
           </NavLink>
 
           <NavLink
-            to="/jobs"
+            to="/management/jobs"
             className={getLinkClass}
           >
-            Vagas
+            Gestão de vagas
           </NavLink>
 
           <NavLink
@@ -100,7 +123,9 @@ export function Header() {
             onClick={handleLogout}
             disabled={isPending}
           >
-            {isPending ? "Saindo..." : "Sair"}
+            {isPending
+              ? "Saindo..."
+              : "Sair"}
           </button>
         </div>
       </div>
