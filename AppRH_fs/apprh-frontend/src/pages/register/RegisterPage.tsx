@@ -31,14 +31,9 @@ import { api } from "../../services/api";
 import "../login/login-page.css";
 import "./register-page.css";
 
-interface ApiErrorResponse {
-  message?: string;
-
-  errors?: Record<
-    string,
-    string
-  >;
-}
+import type {
+  ApiErrorResponse,
+} from "../../interfaces/ApiErrorResponse";
 
 export function RegisterPage() {
   const [login, setLogin] =
@@ -244,12 +239,17 @@ export function RegisterPage() {
         payload
       );
 
-      navigate("/login", {
-        replace: true,
-        state: {
-          registrationSuccess: true,
-        },
-      });
+      navigate(
+        "/verificacao-pendente",
+        {
+          replace: true,
+
+          state: {
+            login:
+              payload.login,
+          },
+        }
+      );
     } catch (error) {
       const axiosError =
         error as AxiosError<ApiErrorResponse>;

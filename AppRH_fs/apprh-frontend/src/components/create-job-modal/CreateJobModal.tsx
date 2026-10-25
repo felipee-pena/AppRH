@@ -1,4 +1,5 @@
 import {
+  useCallback,
   useEffect,
   useMemo,
   useState,
@@ -173,47 +174,61 @@ export function CreateJobModal({
     mutate(job);
   }
 
-  function handleClose() {
-    if (isPending) {
-      return;
-    }
+  const handleClose =
+    useCallback(
+      () => {
+        if (isPending) {
+          return;
+        }
 
-    reset();
-    closeModal();
-  }
-
-  useEffect(() => {
-    document.body.classList.add(
-      "modal-open"
+        reset();
+        closeModal();
+      },
+      [
+        isPending,
+        reset,
+        closeModal,
+      ]
     );
 
-    function handleEscape(
-      event: KeyboardEvent
-    ) {
-      if (
-        event.key === "Escape" &&
-        !isPending
-      ) {
-        handleClose();
-      }
-    }
-
-    window.addEventListener(
-      "keydown",
-      handleEscape
-    );
-
-    return () => {
-      document.body.classList.remove(
+  useEffect(
+    () => {
+      document.body.classList.add(
         "modal-open"
       );
 
-      window.removeEventListener(
+      function handleEscape(
+        event: KeyboardEvent
+      ) {
+        if (
+          event.key === "Escape"
+          && !isPending
+        ) {
+          handleClose();
+        }
+      }
+
+      window.addEventListener(
         "keydown",
         handleEscape
       );
-    };
-  }, [isPending]);
+
+      return () => {
+        document.body.classList.remove(
+          "modal-open"
+        );
+
+        window.removeEventListener(
+          "keydown",
+          handleEscape
+        );
+      };
+    },
+    [
+      isPending,
+      handleClose,
+    ]
+  );
 
   useEffect(() => {
     if (isSuccess) {

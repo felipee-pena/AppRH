@@ -9,6 +9,14 @@ import {
 } from "../components/ProtectedRoute";
 
 import {
+  EmailConfirmationPage,
+} from "../pages/EmailConfirmationPage";
+
+import {
+  EmailVerificationPendingPage,
+} from "../pages/EmailVerificationPendingPage";
+
+import {
   LoginPage,
 } from "../pages/login/LoginPage";
 
@@ -37,12 +45,30 @@ export function AppRoutes() {
     <Routes>
       <Route
         path="/login"
-        element={<LoginPage />}
+        element={
+          <LoginPage />
+        }
       />
 
       <Route
         path="/register"
-        element={<RegisterPage />}
+        element={
+          <RegisterPage />
+        }
+      />
+
+      <Route
+        path="/confirm-email"
+        element={
+          <EmailConfirmationPage />
+        }
+      />
+
+      <Route
+        path="/verificacao-pendente"
+        element={
+          <EmailVerificationPendingPage />
+        }
       />
 
       <Route
@@ -72,7 +98,9 @@ export function AppRoutes() {
         path="/admin/users"
         element={
           <ProtectedRoute
-            allowedRoles={["ADMIN"]}
+            allowedRoles={[
+              "ADMIN",
+            ]}
           >
             <UsersPage />
           </ProtectedRoute>
@@ -92,7 +120,7 @@ export function AppRoutes() {
         path="/"
         element={
           <Navigate
-            to="/jobs"
+            to="/login"
             replace
           />
         }
@@ -102,7 +130,7 @@ export function AppRoutes() {
         path="*"
         element={
           <Navigate
-            to="/jobs"
+            to="/login"
             replace
           />
         }
