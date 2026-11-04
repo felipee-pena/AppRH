@@ -1,50 +1,41 @@
 package com.evomanex.AppRH.domain.user;
 
 import com.evomanex.AppRH.model.Company;
-
-import jakarta.persistence.FetchType;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
-import java.time.OffsetDateTime;
-
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
-
-import lombok.AllArgsConstructor;
-import lombok.EqualsAndHashCode;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
-import java.util.Collection;
 import java.time.OffsetDateTime;
+import java.util.Collection;
 import java.util.List;
+import java.util.Objects;
 
 @Table(
         name = "users",
         schema = "public"
 )
 @Entity(name = "users")
-@Getter
-@NoArgsConstructor
-@AllArgsConstructor
-@EqualsAndHashCode(of = "id")
 public class User implements UserDetails {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     private String id;
 
-    @Column(nullable = false, unique = true)
+    @Column(
+            nullable = false,
+            unique = true
+    )
     private String login;
 
     @Column(nullable = false)
@@ -56,13 +47,23 @@ public class User implements UserDetails {
             length = 10
     )
     private UserRole role;
-    @ManyToOne(
-            fetch = FetchType.LAZY
-    )
-    @JoinColumn(
-            name = "company_id"
-    )
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "company_id")
     private Company company;
+
+    @Enumerated(EnumType.STRING)
+    @Column(
+            nullable = false,
+            length = 40
+    )
+    private UserStatus status;
+
+    @Column(name = "email_verified_at")
+    private OffsetDateTime emailVerifiedAt;
+
+    protected User() {
+    }
 
     public User(
             String login,
@@ -72,20 +73,26 @@ public class User implements UserDetails {
         this.login = login;
         this.password = password;
         this.role = role;
-        this.status =
-                UserStatus.PENDING_EMAIL_CONFIRMATION;
+        this.status = UserStatus.PENDING_EMAIL_CONFIRMATION;
     }
-    @Enumerated(EnumType.STRING)
-    @Column(
-            nullable = false,
-            length = 40
-    )
-    private UserStatus status;
 
-    @Column(
-            name = "email_verified_at"
-    )
-    private OffsetDateTime emailVerifiedAt;
+    public User(
+            String id,
+            String login,
+            String password,
+            UserRole role,
+            Company company,
+            UserStatus status,
+            OffsetDateTime emailVerifiedAt
+    ) {
+        this.id = id;
+        this.login = login;
+        this.password = password;
+        this.role = role;
+        this.company = company;
+        this.status = status;
+        this.emailVerifiedAt = emailVerifiedAt;
+    }
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
@@ -115,6 +122,11 @@ public class User implements UserDetails {
     }
 
     @Override
+    public String getPassword() {
+        return password;
+    }
+
+    @Override
     public boolean isAccountNonExpired() {
         return true;
     }
@@ -135,40 +147,21 @@ public class User implements UserDetails {
     public boolean isEnabled() {
         return status == UserStatus.ACTIVE;
     }
+
+    public String getId() {
+        return id;
+    }
+
+    public String getLogin() {
+        return login;
+    }
+
+    public UserRole getRole() {
+        return role;
+    }
+
     public Company getCompany() {
         return company;
-    }
-
-    public void setCompany(
-            Company company
-    ) {
-        this.company = company;
-    }
-    public void confirmEmail() {
-        this.emailVerifiedAt =
-                OffsetDateTime.now();
-
-        if (
-                this.role == UserRole.USERRH
-        ) {
-            this.status =
-                    UserStatus.PENDING_APPROVAL;
-
-            return;
-        }
-
-        this.status =
-                UserStatus.ACTIVE;
-    }
-
-    public boolean isEmailVerified() {
-        return emailVerifiedAt != null;
-    }
-
-    public boolean isPendingEmailConfirmation() {
-        return status
-                == UserStatus
-                .PENDING_EMAIL_CONFIRMATION;
     }
 
     public UserStatus getStatus() {
@@ -179,20 +172,53 @@ public class User implements UserDetails {
         return emailVerifiedAt;
     }
 
-    public String getId() {
-        return id;
+    public void setCompany(
+            Company company
+    ) {
+        this.company = company;
     }
 
-    public String getLogin() {
-        return login;
+    public void confirmEmail() {
+        this.emailVerifiedAt = OffsetDateTime.now();
+
+        if (this.role == UserRole.USERRH) {
+            this.status = UserStatus.PENDING_APPROVAL;
+            return;
+        }
+
+        this.status = UserStatus.ACTIVE;
+    }
+
+    public boolean isEmailVerified() {
+        return emailVerifiedAt != null;
+    }
+
+    public boolean isPendingEmailConfirmation() {
+        return status
+                == UserStatus.PENDING_EMAIL_CONFIRMATION;
     }
 
     @Override
-    public String getPassword() {
-        return password;
+    public boolean equals(
+            Object object
+    ) {
+        if (this == object) {
+            return true;
+        }
+
+        if (!(object instanceof User user)) {
+            return false;
+        }
+
+        return id != null
+                && Objects.equals(
+                id,
+                user.id
+        );
     }
 
-    public UserRole getRole() {
-        return role;
+    @Override
+    public int hashCode() {
+        return getClass().hashCode();
     }
 }
