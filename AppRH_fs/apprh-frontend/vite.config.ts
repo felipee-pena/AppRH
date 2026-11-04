@@ -86,6 +86,14 @@ export default defineConfig({
     teardownTimeout:
       10000,
 
+    env: {
+      VITE_API_URL:
+        "http://localhost:8081",
+
+      VITE_ACCESS_TOKEN_KEY:
+        "apprh.test.access-token",
+    },
+
     coverage: {
       provider:
         "v8",
