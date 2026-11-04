@@ -1,3 +1,8 @@
+import {
+  type KeyboardEvent,
+  type MouseEvent,
+} from "react";
+
 import "./confirmation-modal.css";
 
 interface ConfirmationModalProps {
@@ -17,25 +22,68 @@ export function ConfirmationModal({
   onConfirm,
   onCancel,
 }: ConfirmationModalProps) {
+  function handleOverlayMouseDown(
+    event: MouseEvent<HTMLDivElement>
+  ) {
+    if (
+      event.target !== event.currentTarget
+      || isPending
+    ) {
+      return;
+    }
+
+    onCancel();
+  }
+
+  function handleOverlayKeyDown(
+    event: KeyboardEvent<HTMLDivElement>
+  ) {
+    if (
+      event.target !== event.currentTarget
+      || isPending
+    ) {
+      return;
+    }
+
+    if (
+      event.key === "Enter"
+      || event.key === " "
+    ) {
+      event.preventDefault();
+      onCancel();
+    }
+  }
+
   return (
     <div
       className="confirmation-modal__overlay"
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="confirmation-title"
-      onMouseDown={onCancel}
+      role="button"
+      tabIndex={0}
+      aria-label="Fechar modal de confirmação"
+      onMouseDown={handleOverlayMouseDown}
+      onKeyDown={handleOverlayKeyDown}
     >
       <section
         className="confirmation-modal"
-        onMouseDown={(event) => event.stopPropagation()}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="confirmation-title"
+        aria-describedby="confirmation-description"
       >
-        <div className="confirmation-modal__icon">
+        <div
+          className="confirmation-modal__icon"
+          aria-hidden="true"
+        >
           !
         </div>
 
-        <h2 id="confirmation-title">{title}</h2>
+        <h2 id="confirmation-title">
+          {title}
+        </h2>
 
-        <p>{description}</p>
+        <p id="confirmation-description">
+          {description}
+        </p>
 
         <div className="confirmation-modal__actions">
           <button
@@ -53,7 +101,9 @@ export function ConfirmationModal({
             onClick={onConfirm}
             disabled={isPending}
           >
-            {isPending ? "Excluindo..." : confirmLabel}
+            {isPending
+              ? "Excluindo..."
+              : confirmLabel}
           </button>
         </div>
       </section>

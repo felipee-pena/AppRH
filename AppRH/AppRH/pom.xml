@@ -24,11 +24,9 @@
 	<properties>
 		<java.version>22</java.version>
 
-		<jacoco.version>0.8.14</jacoco.version>
+		<jacoco.version>0.8.16</jacoco.version>
 
-		<skip.integration.tests>
-			true
-		</skip.integration.tests>
+		<skip.integration.tests>true</skip.integration.tests>
 
 		<project.build.sourceEncoding>
 			UTF-8
@@ -178,12 +176,10 @@
 		<!-- OAuth -->
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
-			<artifactId>
-				spring-boot-starter-oauth2-client
-			</artifactId>
+			<artifactId>spring-boot-starter-oauth2-client</artifactId>
 		</dependency>
 
-		<!-- QR Code google ZXing -->
+		<!-- QR Code Google ZXing -->
 		<dependency>
 			<groupId>com.google.zxing</groupId>
 			<artifactId>core</artifactId>

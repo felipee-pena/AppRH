@@ -5,6 +5,7 @@ import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
 import org.springframework.security.oauth2.core.OAuth2Error;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
+import org.springframework.beans.factory.annotation.Autowired;
 
 import java.util.List;
 import java.util.Locale;
@@ -17,6 +18,7 @@ public class GitHubEmailService {
 
     private final RestClient restClient;
 
+    @Autowired
     public GitHubEmailService() {
         this(
                 RestClient.create()

@@ -4,6 +4,8 @@ import {
   useMemo,
   useState,
   type FormEvent,
+  type KeyboardEvent,
+  type MouseEvent,
 } from "react";
 
 import {
@@ -124,14 +126,13 @@ export function CreateJobModal({
     ]);
 
   function submit(
-    event:
-      FormEvent<HTMLFormElement>
+    event: FormEvent<HTMLFormElement>
   ) {
     event.preventDefault();
 
     if (
-      isAdmin &&
-      !selectedCompanyId
+      isAdmin
+      && !selectedCompanyId
     ) {
       return;
     }
@@ -152,10 +153,14 @@ export function CreateJobModal({
 
     const job: JobRequestData = {
       name: name.trim(),
+
       description:
         description.trim(),
+
       expirationDate,
+
       salary: numericSalary,
+
       contactEmail:
         contactEmail.trim()
           ? contactEmail
@@ -191,6 +196,38 @@ export function CreateJobModal({
       ]
     );
 
+  function handleOverlayMouseDown(
+    event: MouseEvent<HTMLDivElement>
+  ) {
+    if (
+      event.target
+      !== event.currentTarget
+    ) {
+      return;
+    }
+
+    handleClose();
+  }
+
+  function handleOverlayKeyDown(
+    event: KeyboardEvent<HTMLDivElement>
+  ) {
+    if (
+      event.target
+      !== event.currentTarget
+    ) {
+      return;
+    }
+
+    if (
+      event.key === "Enter"
+      || event.key === " "
+    ) {
+      event.preventDefault();
+      handleClose();
+    }
+  }
+
   useEffect(
     () => {
       document.body.classList.add(
@@ -198,7 +235,7 @@ export function CreateJobModal({
       );
 
       function handleEscape(
-        event: KeyboardEvent
+        event: globalThis.KeyboardEvent
       ) {
         if (
           event.key === "Escape"
@@ -230,28 +267,33 @@ export function CreateJobModal({
     ]
   );
 
-  useEffect(() => {
-    if (isSuccess) {
-      closeModal();
-    }
-  }, [
-    isSuccess,
-    closeModal,
-  ]);
+  useEffect(
+    () => {
+      if (isSuccess) {
+        closeModal();
+      }
+    },
+    [
+      isSuccess,
+      closeModal,
+    ]
+  );
 
   return createPortal(
     <div
       className="job-modal__overlay"
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="create-job-title"
-      onMouseDown={handleClose}
+      role="button"
+      tabIndex={0}
+      aria-label="Fechar modal de cadastro de vaga"
+      onMouseDown={handleOverlayMouseDown}
+      onKeyDown={handleOverlayKeyDown}
     >
       <section
         className="job-modal"
-        onMouseDown={(event) => {
-          event.stopPropagation();
-        }}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="create-job-title"
+        aria-describedby="create-job-description"
       >
         <header className="job-modal__header">
           <div>
@@ -263,7 +305,7 @@ export function CreateJobModal({
               Cadastrar nova vaga
             </h2>
 
-            <p>
+            <p id="create-job-description">
               Informe os dados que
               serão apresentados aos
               candidatos.
@@ -369,11 +411,14 @@ export function CreateJobModal({
 
           {isRh && (
             <div className="job-modal__field job-modal__field--full">
-              <label>
+              <span className="job-modal__label">
                 Empresa vinculada
-              </label>
+              </span>
 
-              <div className="job-modal__readonly">
+              <div
+                className="job-modal__readonly"
+                aria-label="Empresa vinculada"
+              >
                 {isLoadingRhCompany
                   ? "Carregando empresa..."
                   : rhCompany?.name
@@ -394,8 +439,8 @@ export function CreateJobModal({
                 value={companySearch}
                 placeholder="Pesquisar empresa"
                 disabled={
-                  isPending ||
-                  isLoadingCompanies
+                  isPending
+                  || isLoadingCompanies
                 }
                 onChange={(event) => {
                   setCompanySearch(
@@ -412,17 +457,13 @@ export function CreateJobModal({
                       type="button"
                       className={
                         selectedCompanyId
-                          === String(
-                            company.id
-                          )
+                          === String(company.id)
                           ? "job-modal__company-option job-modal__company-option--selected"
                           : "job-modal__company-option"
                       }
                       onClick={() => {
                         setSelectedCompanyId(
-                          String(
-                            company.id
-                          )
+                          String(company.id)
                         );
                       }}
                     >
@@ -460,7 +501,10 @@ export function CreateJobModal({
           </div>
 
           {isError && (
-            <div className="job-modal__error">
+            <div
+              className="job-modal__error"
+              role="alert"
+            >
               <strong>
                 Não foi possível
                 cadastrar a vaga.
@@ -488,14 +532,14 @@ export function CreateJobModal({
               type="submit"
               className="job-modal__button job-modal__button--primary"
               disabled={
-                isPending ||
-                !name.trim() ||
-                !description.trim() ||
-                !expirationDate ||
-                !salary.trim() ||
-                (
-                  isAdmin &&
-                  !selectedCompanyId
+                isPending
+                || !name.trim()
+                || !description.trim()
+                || !expirationDate
+                || !salary.trim()
+                || (
+                  isAdmin
+                  && !selectedCompanyId
                 )
               }
             >
