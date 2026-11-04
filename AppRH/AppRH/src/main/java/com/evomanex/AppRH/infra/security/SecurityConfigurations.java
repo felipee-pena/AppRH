@@ -47,20 +47,11 @@ public class SecurityConfigurations {
             OAuthAuthenticationSuccessHandler oauthSuccessHandler,
             OAuthAuthenticationFailureHandler oauthFailureHandler
     ) {
-        this.securityFilter =
-                securityFilter;
-
-        this.customOAuth2UserService =
-                customOAuth2UserService;
-
-        this.customOidcUserService =
-                customOidcUserService;
-
-        this.oauthSuccessHandler =
-                oauthSuccessHandler;
-
-        this.oauthFailureHandler =
-                oauthFailureHandler;
+        this.securityFilter = securityFilter;
+        this.customOAuth2UserService = customOAuth2UserService;
+        this.customOidcUserService = customOidcUserService;
+        this.oauthSuccessHandler = oauthSuccessHandler;
+        this.oauthFailureHandler = oauthFailureHandler;
     }
 
     @Bean
@@ -130,11 +121,124 @@ public class SecurityConfigurations {
                 .authorizeHttpRequests(
                         authorize ->
                                 authorize
+                                        /*
+                                         * Requisições de preflight do navegador.
+                                         */
                                         .requestMatchers(
                                                 HttpMethod.OPTIONS,
                                                 "/**"
                                         )
                                         .permitAll()
+
+                                        /*
+                                         * Actuator público.
+                                         */
+                                        .requestMatchers(
+                                                HttpMethod.GET,
+                                                "/actuator/health",
+                                                "/actuator/health/**",
+                                                "/actuator/info"
+                                        )
+                                        .permitAll()
+
+                                        /*
+                                         * Swagger e OpenAPI.
+                                         */
+                                        .requestMatchers(
+                                                HttpMethod.GET,
+                                                "/swagger-ui.html",
+                                                "/swagger-ui/**",
+                                                "/v3/api-docs",
+                                                "/v3/api-docs/**",
+                                                "/v3/api-docs.yaml",
+                                                "/webjars/**",
+                                                "/favicon.ico"
+                                        )
+                                        .permitAll()
+
+                                        /*
+                                         * Login tradicional com usuário e senha.
+                                         */
+                                        .requestMatchers(
+                                                HttpMethod.POST,
+                                                "/auth/login"
+                                        )
+                                        .permitAll()
+
+                                        /*
+                                         * Cadastro de usuário.
+                                         */
+                                        .requestMatchers(
+                                                HttpMethod.POST,
+                                                "/auth/register"
+                                        )
+                                        .permitAll()
+
+                                        /*
+                                         * Confirmação do e-mail pelo link enviado
+                                         * ao usuário.
+                                         */
+                                        .requestMatchers(
+                                                HttpMethod.GET,
+                                                "/auth/email/confirm"
+                                        )
+                                        .permitAll()
+
+                                        /*
+                                         * Reenvio do e-mail de confirmação.
+                                         */
+                                        .requestMatchers(
+                                                HttpMethod.POST,
+                                                "/auth/email/resend"
+                                        )
+                                        .permitAll()
+
+                                        /*
+                                         * Troca do código temporário OAuth
+                                         * pelo token da aplicação.
+                                         */
+                                        .requestMatchers(
+                                                HttpMethod.POST,
+                                                "/auth/oauth/exchange"
+                                        )
+                                        .permitAll()
+
+                                        /*
+                                         * Verificação do código MFA durante
+                                         * o processo de login.
+                                         */
+                                        .requestMatchers(
+                                                HttpMethod.POST,
+                                                "/auth/mfa/verify"
+                                        )
+                                        .permitAll()
+
+                                        /*
+                                         * Consulta pública das empresas.
+                                         */
+                                        .requestMatchers(
+                                                HttpMethod.GET,
+                                                "/api/companies",
+                                                "/api/companies/**"
+                                        )
+                                        .permitAll()
+
+                                        /*
+                                         * O Spring Boot pode encaminhar erros
+                                         * internos para /error utilizando o
+                                         * mesmo método da requisição original.
+                                         */
+                                        .requestMatchers(
+                                                "/error"
+                                        )
+                                        .permitAll()
+
+                                        /*
+                                         * Mantemos os caminhos desta cadeia
+                                         * acessíveis ao DispatcherServlet para
+                                         * que métodos incorretos resultem em 405,
+                                         * conforme o mapeamento dos controllers.
+                                         */
                                         .anyRequest()
                                         .permitAll()
                 )
@@ -197,24 +301,68 @@ public class SecurityConfigurations {
                 .authorizeHttpRequests(
                         authorize ->
                                 authorize
+                                        /*
+                                         * Preflight CORS.
+                                         */
                                         .requestMatchers(
                                                 HttpMethod.OPTIONS,
                                                 "/**"
                                         )
                                         .permitAll()
 
+                                        /*
+                                         * Início do login OAuth2/OIDC.
+                                         *
+                                         * Exemplos:
+                                         * GET /oauth2/authorization/google
+                                         * GET /oauth2/authorization/github
+                                         */
                                         .requestMatchers(
-                                                "/oauth2/**",
+                                                HttpMethod.GET,
+                                                "/oauth2/**"
+                                        )
+                                        .permitAll()
+
+                                        /*
+                                         * Callback recebido do Google ou GitHub.
+                                         *
+                                         * Exemplos:
+                                         * GET /login/oauth2/code/google
+                                         * GET /login/oauth2/code/github
+                                         */
+                                        .requestMatchers(
+                                                HttpMethod.GET,
                                                 "/login/oauth2/**"
                                         )
                                         .permitAll()
 
+                                        /*
+                                         * Configuração e administração do MFA
+                                         * da conta autenticada.
+                                         */
                                         .requestMatchers(
                                                 "/api/account/mfa/**"
                                         )
                                         .authenticated()
 
+                                        /*
+                                         * Consulta da empresa vinculada ao RH.
+                                         */
                                         .requestMatchers(
+                                                HttpMethod.GET,
+                                                "/api/rh/company",
+                                                "/api/rh/company/**"
+                                        )
+                                        .hasRole(
+                                                "USERRH"
+                                        )
+
+                                        /*
+                                         * Cadastro ou atualização da empresa
+                                         * vinculada ao RH.
+                                         */
+                                        .requestMatchers(
+                                                HttpMethod.POST,
                                                 "/api/rh/company",
                                                 "/api/rh/company/**"
                                         )
@@ -223,13 +371,38 @@ public class SecurityConfigurations {
                                         )
 
                                         .requestMatchers(
+                                                HttpMethod.PUT,
+                                                "/api/rh/company",
+                                                "/api/rh/company/**"
+                                        )
+                                        .hasRole(
+                                                "USERRH"
+                                        )
+
+                                        .requestMatchers(
+                                                HttpMethod.PATCH,
+                                                "/api/rh/company",
+                                                "/api/rh/company/**"
+                                        )
+                                        .hasRole(
+                                                "USERRH"
+                                        )
+
+                                        /*
+                                         * Consulta das vagas.
+                                         */
+                                        .requestMatchers(
                                                 HttpMethod.GET,
                                                 "/api/jobs",
                                                 "/api/jobs/**"
                                         )
                                         .authenticated()
 
+                                        /*
+                                         * Gerenciamento das vagas pelo RH.
+                                         */
                                         .requestMatchers(
+                                                HttpMethod.GET,
                                                 "/api/management/jobs",
                                                 "/api/management/jobs/**"
                                         )
@@ -238,6 +411,45 @@ public class SecurityConfigurations {
                                         )
 
                                         .requestMatchers(
+                                                HttpMethod.POST,
+                                                "/api/management/jobs",
+                                                "/api/management/jobs/**"
+                                        )
+                                        .hasRole(
+                                                "USERRH"
+                                        )
+
+                                        .requestMatchers(
+                                                HttpMethod.PUT,
+                                                "/api/management/jobs",
+                                                "/api/management/jobs/**"
+                                        )
+                                        .hasRole(
+                                                "USERRH"
+                                        )
+
+                                        .requestMatchers(
+                                                HttpMethod.PATCH,
+                                                "/api/management/jobs",
+                                                "/api/management/jobs/**"
+                                        )
+                                        .hasRole(
+                                                "USERRH"
+                                        )
+
+                                        .requestMatchers(
+                                                HttpMethod.DELETE,
+                                                "/api/management/jobs",
+                                                "/api/management/jobs/**"
+                                        )
+                                        .hasRole(
+                                                "USERRH"
+                                        )
+
+                                        /*
+                                         * Endpoints administrativos.
+                                         */
+                                        .requestMatchers(
                                                 "/api/admin",
                                                 "/api/admin/**"
                                         )
@@ -245,6 +457,10 @@ public class SecurityConfigurations {
                                                 "ADMIN"
                                         )
 
+                                        /*
+                                         * Qualquer outro endpoint exige
+                                         * usuário autenticado.
+                                         */
                                         .anyRequest()
                                         .authenticated()
                 )
@@ -365,8 +581,7 @@ public class SecurityConfigurations {
     }
 
     @Bean
-    public CorsConfigurationSource
-    corsConfigurationSource() {
+    public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration =
                 new CorsConfiguration();
 
