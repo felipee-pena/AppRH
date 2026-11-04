@@ -16,8 +16,13 @@ import type {
   LoginRequest,
 } from "../interfaces/LoginRequest";
 
+import type {
+  LoginResponse,
+} from "../interfaces/LoginResponse";
+
 import {
   login as authenticate,
+  verifyMfa,
 } from "../services/auth-service";
 
 import {
@@ -27,18 +32,34 @@ import {
 } from "../services/token-storage";
 
 import {
+  getMfaChallenge,
+  removeMfaChallenge,
+  saveMfaChallenge,
+} from "../services/mfa-storage";
+
+import {
   extractUserFromToken,
   isTokenExpired,
 } from "../utils/jwt";
 
 interface AuthContextData {
   user: AuthUser | null;
+
   isAuthenticated: boolean;
+
   isInitializing: boolean;
 
   login(
     credentials: LoginRequest
-  ): Promise<void>;
+  ): Promise<LoginResponse>;
+
+  completeMfa(
+    code: string
+  ): Promise<LoginResponse>;
+
+  processAuthenticationResponse(
+    response: LoginResponse
+  ): void;
 
   logout(): void;
 
@@ -68,11 +89,12 @@ export function AuthProvider({
   ] = useState(true);
 
   useEffect(() => {
-    const token = getAccessToken();
+    const token =
+      getAccessToken();
 
     if (
-      !token ||
-      isTokenExpired(token)
+      !token
+      || isTokenExpired(token)
     ) {
       removeAccessToken();
       setUser(null);
@@ -96,53 +118,146 @@ export function AuthProvider({
     setIsInitializing(false);
   }, []);
 
-  const login = useCallback(
-    async (
-      credentials: LoginRequest
-    ) => {
-      const response =
-        await authenticate(credentials);
+  const processAuthenticationResponse =
+    useCallback(
+      (
+        response: LoginResponse
+      ) => {
+        if (
+          response.mfa_required
+          && response.challenge_token
+        ) {
+          removeAccessToken();
 
-      const accessToken =
-        response.access_token;
+          saveMfaChallenge(
+            response.challenge_token
+          );
 
-      const authenticatedUser =
-        extractUserFromToken(
+          setUser(null);
+
+          return;
+        }
+
+        const accessToken =
+          response.access_token;
+
+        if (!accessToken) {
+          removeAccessToken();
+          removeMfaChallenge();
+          setUser(null);
+
+          throw new Error(
+            "A resposta de autenticação "
+              + "não contém token nem desafio MFA."
+          );
+        }
+
+        const authenticatedUser =
+          extractUserFromToken(
+            accessToken
+          );
+
+        if (!authenticatedUser) {
+          removeAccessToken();
+          removeMfaChallenge();
+          setUser(null);
+
+          throw new Error(
+            "Não foi possível identificar "
+              + "o usuário autenticado."
+          );
+        }
+
+        saveAccessToken(
           accessToken
         );
 
-      if (!authenticatedUser) {
-        removeAccessToken();
+        removeMfaChallenge();
 
-        throw new Error(
-          "Não foi possível identificar "
-            + "o usuário autenticado."
+        setUser(
+          authenticatedUser
         );
-      }
+      },
+      []
+    );
 
-      saveAccessToken(accessToken);
-      setUser(authenticatedUser);
-    },
-    []
-  );
+  const login =
+    useCallback(
+      async (
+        credentials: LoginRequest
+      ): Promise<LoginResponse> => {
+        const response =
+          await authenticate(
+            credentials
+          );
 
-  const logout = useCallback(() => {
-    removeAccessToken();
-    setUser(null);
-  }, []);
+        processAuthenticationResponse(
+          response
+        );
 
-  const hasRole = useCallback(
-    (...roles: UserRole[]) => {
-      if (!user) {
-        return false;
-      }
+        return response;
+      },
+      [
+        processAuthenticationResponse,
+      ]
+    );
 
-      return roles.includes(
-        user.role
-      );
-    },
-    [user]
-  );
+  const completeMfa =
+    useCallback(
+      async (
+        code: string
+      ): Promise<LoginResponse> => {
+        const challengeToken =
+          getMfaChallenge();
+
+        if (!challengeToken) {
+          throw new Error(
+            "O desafio MFA não foi encontrado."
+          );
+        }
+
+        const response =
+          await verifyMfa(
+            challengeToken,
+            code
+          );
+
+        processAuthenticationResponse(
+          response
+        );
+
+        return response;
+      },
+      [
+        processAuthenticationResponse,
+      ]
+    );
+
+  const logout =
+    useCallback(
+      () => {
+        removeAccessToken();
+        removeMfaChallenge();
+        setUser(null);
+      },
+      []
+    );
+
+  const hasRole =
+    useCallback(
+      (
+        ...roles: UserRole[]
+      ) => {
+        if (!user) {
+          return false;
+        }
+
+        return roles.includes(
+          user.role
+        );
+      },
+      [user]
+    );
 
   const contextValue =
     useMemo<AuthContextData>(
@@ -152,6 +267,8 @@ export function AuthProvider({
           user !== null,
         isInitializing,
         login,
+        completeMfa,
+        processAuthenticationResponse,
         logout,
         hasRole,
       }),
@@ -159,6 +276,8 @@ export function AuthProvider({
         user,
         isInitializing,
         login,
+        completeMfa,
+        processAuthenticationResponse,
         logout,
         hasRole,
       ]

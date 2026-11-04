@@ -1,0 +1,119 @@
+.mfa-page {
+  display: grid;
+  min-height: 100vh;
+  padding: 24px;
+  place-items: center;
+  color: #f8fafc;
+  background:
+    radial-gradient(
+      circle at 15% 20%,
+      rgba(86, 101, 245, 0.2),
+      transparent 34%
+    ),
+    linear-gradient(
+      135deg,
+      #081126,
+      #101936
+    );
+}
+
+.mfa-card {
+  width: min(100%, 440px);
+  padding: 38px;
+  border: 1px solid rgba(148, 163, 184, 0.16);
+  border-radius: 26px;
+  background: rgba(15, 23, 48, 0.95);
+  box-shadow: 0 30px 70px rgba(0, 0, 0, 0.34);
+}
+
+.mfa-card__brand {
+  color: #a5b4fc;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+}
+
+.mfa-card h1 {
+  margin: 16px 0 10px;
+  color: #ffffff;
+  font-size: 30px;
+}
+
+.mfa-card > p {
+  color: #94a3b8;
+  line-height: 1.6;
+}
+
+.mfa-card form {
+  display: grid;
+  gap: 12px;
+  margin-top: 26px;
+}
+
+.mfa-card label {
+  color: #dbe5f5;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.mfa-card input {
+  width: 100%;
+  min-height: 58px;
+  border: 1px solid #33415f;
+  border-radius: 14px;
+  outline: none;
+  color: #ffffff;
+  font: inherit;
+  font-size: 26px;
+  font-weight: 760;
+  letter-spacing: 0.32em;
+  text-align: center;
+  background: rgba(7, 14, 31, 0.75);
+}
+
+.mfa-card input:focus {
+  border-color: #7887ff;
+  box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.13);
+}
+
+.mfa-card form button {
+  min-height: 52px;
+  border: 0;
+  border-radius: 14px;
+  color: #ffffff;
+  font: inherit;
+  font-weight: 760;
+  background:
+    linear-gradient(
+      135deg,
+      #5665f5,
+      #7048e8
+    );
+  cursor: pointer;
+}
+
+.mfa-card form button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.mfa-card__error {
+  margin-top: 18px;
+  padding: 13px;
+  border: 1px solid rgba(248, 113, 113, 0.25);
+  border-radius: 12px;
+  color: #fecaca;
+  background: rgba(127, 29, 29, 0.2);
+}
+
+.mfa-card__cancel {
+  width: 100%;
+  margin-top: 18px;
+  padding: 8px;
+  border: 0;
+  color: #a5b4fc;
+  font: inherit;
+  background: transparent;
+  cursor: pointer;
+}

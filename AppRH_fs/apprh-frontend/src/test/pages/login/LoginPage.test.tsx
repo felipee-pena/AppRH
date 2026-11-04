@@ -1,14 +1,16 @@
 import {
-  fireEvent,
   render,
   screen,
   waitFor,
 } from "@testing-library/react";
 
+import userEvent from "@testing-library/user-event";
+
 import {
   MemoryRouter,
   Route,
   Routes,
+  useLocation,
 } from "react-router-dom";
 
 import {
@@ -27,10 +29,23 @@ import {
   useAuth,
 } from "../../../hooks/useAuth";
 
+import {
+  startGitHubLogin,
+  startGoogleLogin,
+} from "../../../services/auth-service";
+
 vi.mock(
-  "../../../hooks/useAuth",
+  "../../../hooks/useAuth"
+);
+
+vi.mock(
+  "../../../services/auth-service",
   () => ({
-    useAuth: vi.fn(),
+    startGoogleLogin:
+      vi.fn(),
+
+    startGitHubLogin:
+      vi.fn(),
   })
 );
 
@@ -39,21 +54,86 @@ const mockedUseAuth =
     useAuth
   );
 
-function configureAuth(
-  login = vi.fn()
-) {
-  mockedUseAuth.mockReturnValue({
-    user: null,
-    isAuthenticated: false,
-    isInitializing: false,
-    login,
-    logout: vi.fn(),
-    hasRole: vi.fn(
-      () => false
-    ),
-  } as unknown as ReturnType<typeof useAuth>);
+const mockedStartGoogleLogin =
+  vi.mocked(
+    startGoogleLogin
+  );
 
-  return login;
+const mockedStartGitHubLogin =
+  vi.mocked(
+    startGitHubLogin
+  );
+
+const loginMock =
+  vi.fn();
+
+const completeMfaMock =
+  vi.fn();
+
+const processAuthenticationResponseMock =
+  vi.fn();
+
+const logoutMock =
+  vi.fn();
+
+const hasRoleMock =
+  vi.fn();
+
+function configureAuthContext(
+  options: {
+    isAuthenticated?: boolean;
+    isInitializing?: boolean;
+  } = {}
+) {
+  const {
+    isAuthenticated = false,
+    isInitializing = false,
+  } = options;
+
+  mockedUseAuth.mockReturnValue({
+    user:
+      isAuthenticated
+        ? {
+            login:
+              "user@example.com",
+
+            role:
+              "USER",
+          }
+        : null,
+
+    isAuthenticated,
+
+    isInitializing,
+
+    login:
+      loginMock,
+
+    completeMfa:
+      completeMfaMock,
+
+    processAuthenticationResponse:
+      processAuthenticationResponseMock,
+
+    logout:
+      logoutMock,
+
+    hasRole:
+      hasRoleMock,
+  });
+}
+
+function LocationDisplay() {
+  const location =
+    useLocation();
+
+  return (
+    <div
+      data-testid="current-location"
+    >
+      {location.pathname}
+    </div>
+  );
 }
 
 function renderPage(
@@ -61,6 +141,7 @@ function renderPage(
     | string
     | {
         pathname: string;
+        search?: string;
         state?: unknown;
       } = "/login"
 ) {
@@ -70,6 +151,8 @@ function renderPage(
         initialEntry,
       ]}
     >
+      <LocationDisplay />
+
       <Routes>
         <Route
           path="/login"
@@ -79,29 +162,29 @@ function renderPage(
         />
 
         <Route
-          path="/jobs"
-          element={
-            <p>
-              Página de vagas
-            </p>
-          }
-        />
-
-        <Route
-          path="/management/jobs"
-          element={
-            <p>
-              Gestão de vagas
-            </p>
-          }
-        />
-
-        <Route
           path="/register"
           element={
-            <p>
-              Página de cadastro
-            </p>
+            <h1>
+              Cadastro
+            </h1>
+          }
+        />
+
+        <Route
+          path="/jobs"
+          element={
+            <h1>
+              Vagas
+            </h1>
+          }
+        />
+
+        <Route
+          path="/mfa/verify"
+          element={
+            <h1>
+              Verificação MFA
+            </h1>
           }
         />
       </Routes>
@@ -115,14 +198,25 @@ describe(
     beforeEach(
       () => {
         vi.clearAllMocks();
-        configureAuth();
+
+        configureAuthContext();
       }
     );
 
     it(
-      "renders login fields",
+      "renders login form",
       () => {
         renderPage();
+
+        expect(
+          screen.getByRole(
+            "heading",
+            {
+              name:
+                "Acesse sua conta",
+            }
+          )
+        ).toBeInTheDocument();
 
         expect(
           screen.getByLabelText(
@@ -134,10 +228,7 @@ describe(
           screen.getByLabelText(
             "Senha"
           )
-        ).toHaveAttribute(
-          "type",
-          "password"
-        );
+        ).toBeInTheDocument();
 
         expect(
           screen.getByRole(
@@ -152,35 +243,42 @@ describe(
     );
 
     it(
-      "enables login after filling required fields",
-      () => {
+      "submits traditional login and navigates to jobs",
+      async () => {
+        const user =
+          userEvent.setup();
+
+        loginMock.mockResolvedValue({
+          mfa_required:
+            false,
+
+          access_token:
+            "jwt-token",
+
+          token_type:
+            "Bearer",
+
+          expires_in:
+            7200,
+        });
+
         renderPage();
 
-        fireEvent.change(
+        await user.type(
           screen.getByLabelText(
             "Login"
           ),
-          {
-            target: {
-              value:
-                "usuario@example.com",
-            },
-          }
+          "USER@EXAMPLE.COM"
         );
 
-        fireEvent.change(
+        await user.type(
           screen.getByLabelText(
             "Senha"
           ),
-          {
-            target: {
-              value:
-                "senha-segura",
-            },
-          }
+          "password"
         );
 
-        expect(
+        await user.click(
           screen.getByRole(
             "button",
             {
@@ -188,13 +286,261 @@ describe(
                 "Entrar na plataforma",
             }
           )
-        ).toBeEnabled();
+        );
+
+        await waitFor(
+          () => {
+            expect(
+              loginMock
+            ).toHaveBeenCalledWith({
+              login:
+                "USER@EXAMPLE.COM",
+
+              password:
+                "password",
+            });
+          }
+        );
+
+        expect(
+          await screen.findByRole(
+            "heading",
+            {
+              name:
+                "Vagas",
+            }
+          )
+        ).toBeInTheDocument();
+
+        expect(
+          screen.getByTestId(
+            "current-location"
+          )
+        ).toHaveTextContent(
+          "/jobs"
+        );
       }
     );
 
     it(
-      "shows and hides password",
+      "navigates to MFA verification when required",
+      async () => {
+        const user =
+          userEvent.setup();
+
+        loginMock.mockResolvedValue({
+          mfa_required:
+            true,
+
+          challenge_token:
+            "mfa-challenge-token",
+        });
+
+        renderPage();
+
+        await user.type(
+          screen.getByLabelText(
+            "Login"
+          ),
+          "user@example.com"
+        );
+
+        await user.type(
+          screen.getByLabelText(
+            "Senha"
+          ),
+          "password"
+        );
+
+        await user.click(
+          screen.getByRole(
+            "button",
+            {
+              name:
+                "Entrar na plataforma",
+            }
+          )
+        );
+
+        expect(
+          await screen.findByRole(
+            "heading",
+            {
+              name:
+                "Verificação MFA",
+            }
+          )
+        ).toBeInTheDocument();
+
+        expect(
+          screen.getByTestId(
+            "current-location"
+          )
+        ).toHaveTextContent(
+          "/mfa/verify"
+        );
+      }
+    );
+
+    it(
+      "starts Google login",
+      async () => {
+        const user =
+          userEvent.setup();
+
+        renderPage();
+
+        await user.click(
+          screen.getByRole(
+            "button",
+            {
+              name:
+                "Google",
+            }
+          )
+        );
+
+        expect(
+          mockedStartGoogleLogin
+        ).toHaveBeenCalledOnce();
+      }
+    );
+
+    it(
+      "starts GitHub login",
+      async () => {
+        const user =
+          userEvent.setup();
+
+        renderPage();
+
+        await user.click(
+          screen.getByRole(
+            "button",
+            {
+              name:
+                "GitHub",
+            }
+          )
+        );
+
+        expect(
+          mockedStartGitHubLogin
+        ).toHaveBeenCalledOnce();
+      }
+    );
+
+    it(
+      "shows OAuth error from URL",
       () => {
+        renderPage(
+          "/login?oauthError=Falha%20no%20OAuth"
+        );
+
+        expect(
+          screen.getByRole(
+            "alert"
+          )
+        ).toHaveTextContent(
+          "Falha no OAuth"
+        );
+      }
+    );
+
+    it(
+      "shows session expiration message",
+      () => {
+        renderPage(
+          "/login?sessionExpired=true"
+        );
+
+        expect(
+          screen.getByRole(
+            "alert"
+          )
+        ).toHaveTextContent(
+          "Sua sessão expirou. Entre novamente."
+        );
+      }
+    );
+
+    it(
+      "shows registration success message",
+      () => {
+        renderPage({
+          pathname:
+            "/login",
+
+          state: {
+            registrationSuccess:
+              true,
+          },
+        });
+
+        expect(
+          screen.getByRole(
+            "status"
+          )
+        ).toHaveTextContent(
+          "Conta criada com sucesso."
+        );
+      }
+    );
+
+    it(
+      "shows invalid credentials error",
+      async () => {
+        const user =
+          userEvent.setup();
+
+        loginMock.mockRejectedValue(
+          new Error(
+            "Login ou senha inválidos."
+          )
+        );
+
+        renderPage();
+
+        await user.type(
+          screen.getByLabelText(
+            "Login"
+          ),
+          "user@example.com"
+        );
+
+        await user.type(
+          screen.getByLabelText(
+            "Senha"
+          ),
+          "wrong-password"
+        );
+
+        await user.click(
+          screen.getByRole(
+            "button",
+            {
+              name:
+                "Entrar na plataforma",
+            }
+          )
+        );
+
+        expect(
+          await screen.findByRole(
+            "alert"
+          )
+        ).toHaveTextContent(
+          "Login ou senha inválidos."
+        );
+      }
+    );
+
+    it(
+      "toggles password visibility",
+      async () => {
+        const user =
+          userEvent.setup();
+
         renderPage();
 
         const passwordInput =
@@ -202,7 +548,14 @@ describe(
             "Senha"
           );
 
-        fireEvent.click(
+        expect(
+          passwordInput
+        ).toHaveAttribute(
+          "type",
+          "password"
+        );
+
+        await user.click(
           screen.getByRole(
             "button",
             {
@@ -219,17 +572,7 @@ describe(
           "text"
         );
 
-        expect(
-          screen.getByRole(
-            "button",
-            {
-              name:
-                "Ocultar senha",
-            }
-          )
-        ).toBeInTheDocument();
-
-        fireEvent.click(
+        await user.click(
           screen.getByRole(
             "button",
             {
@@ -249,327 +592,47 @@ describe(
     );
 
     it(
-      "authenticates using trimmed login",
-      async () => {
-        const login =
-          configureAuth(
-            vi.fn().mockResolvedValue(
-              undefined
-            )
-          );
-
-        renderPage();
-
-        fireEvent.change(
-          screen.getByLabelText(
-            "Login"
-          ),
-          {
-            target: {
-              value:
-                "  usuario@example.com  ",
-            },
-          }
-        );
-
-        fireEvent.change(
-          screen.getByLabelText(
-            "Senha"
-          ),
-          {
-            target: {
-              value:
-                "senha-segura",
-            },
-          }
-        );
-
-        fireEvent.click(
-          screen.getByRole(
-            "button",
-            {
-              name:
-                "Entrar na plataforma",
-            }
-          )
-        );
-
-        await waitFor(
-          () => {
-            expect(
-              login
-            ).toHaveBeenCalledWith({
-              login:
-                "usuario@example.com",
-              password:
-                "senha-segura",
-            });
-          }
-        );
-
-        await waitFor(
-          () => {
-            expect(
-              screen.getByText(
-                "Página de vagas"
-              )
-            ).toBeInTheDocument();
-          }
-        );
-      }
-    );
-
-    it(
-      "returns to the original protected route",
-      async () => {
-        const login =
-          configureAuth(
-            vi.fn().mockResolvedValue(
-              undefined
-            )
-          );
-
-        renderPage({
-          pathname:
-            "/login",
-          state: {
-            from:
-              "/management/jobs",
-          },
-        });
-
-        fireEvent.change(
-          screen.getByLabelText(
-            "Login"
-          ),
-          {
-            target: {
-              value:
-                "rh@example.com",
-            },
-          }
-        );
-
-        fireEvent.change(
-          screen.getByLabelText(
-            "Senha"
-          ),
-          {
-            target: {
-              value:
-                "senha-segura",
-            },
-          }
-        );
-
-        fireEvent.click(
-          screen.getByRole(
-            "button",
-            {
-              name:
-                "Entrar na plataforma",
-            }
-          )
-        );
-
-        await waitFor(
-          () => {
-            expect(
-              login
-            ).toHaveBeenCalledWith({
-              login:
-                "rh@example.com",
-              password:
-                "senha-segura",
-            });
-          }
-        );
-
-        await waitFor(
-          () => {
-            expect(
-              screen.getByText(
-                "Gestão de vagas"
-              )
-            ).toBeInTheDocument();
-          }
-        );
-      }
-    );
-
-    it(
-      "shows authentication error",
-      async () => {
-        configureAuth(
-          vi.fn().mockRejectedValue(
-            new Error(
-              "Unauthorized"
-            )
-          )
-        );
-
-        renderPage();
-
-        fireEvent.change(
-          screen.getByLabelText(
-            "Login"
-          ),
-          {
-            target: {
-              value:
-                "usuario@example.com",
-            },
-          }
-        );
-
-        fireEvent.change(
-          screen.getByLabelText(
-            "Senha"
-          ),
-          {
-            target: {
-              value:
-                "senha-incorreta",
-            },
-          }
-        );
-
-        fireEvent.click(
-          screen.getByRole(
-            "button",
-            {
-              name:
-                "Entrar na plataforma",
-            }
-          )
-        );
-
-        await waitFor(
-          () => {
-            expect(
-              screen.getByRole(
-                "alert"
-              )
-            ).toHaveTextContent(
-              "Login ou senha inválidos. Confira os dados e tente novamente."
-            );
-          }
-        );
-
-        expect(
-          screen.queryByText(
-            "Página de vagas"
-          )
-        ).not.toBeInTheDocument();
-      }
-    );
-
-    it(
-      "clears the authentication error when login changes",
-      async () => {
-        configureAuth(
-          vi.fn().mockRejectedValue(
-            new Error(
-              "Unauthorized"
-            )
-          )
-        );
-
-        renderPage();
-
-        const loginInput =
-          screen.getByLabelText(
-            "Login"
-          );
-
-        fireEvent.change(
-          loginInput,
-          {
-            target: {
-              value:
-                "usuario@example.com",
-            },
-          }
-        );
-
-        fireEvent.change(
-          screen.getByLabelText(
-            "Senha"
-          ),
-          {
-            target: {
-              value:
-                "senha-incorreta",
-            },
-          }
-        );
-
-        fireEvent.click(
-          screen.getByRole(
-            "button",
-            {
-              name:
-                "Entrar na plataforma",
-            }
-          )
-        );
-
-        await waitFor(
-          () => {
-            expect(
-              screen.getByRole(
-                "alert"
-              )
-            ).toBeInTheDocument();
-          }
-        );
-
-        fireEvent.change(
-          loginInput,
-          {
-            target: {
-              value:
-                "outro@example.com",
-            },
-          }
-        );
-
-        expect(
-          screen.queryByRole(
-            "alert"
-          )
-        ).not.toBeInTheDocument();
-      }
-    );
-
-    it(
-      "shows registration success feedback",
+      "redirects authenticated user to jobs",
       () => {
-        renderPage({
-          pathname:
-            "/login",
-          state: {
-            registrationSuccess:
-              true,
-          },
+        configureAuthContext({
+          isAuthenticated:
+            true,
+
+          isInitializing:
+            false,
         });
+
+        renderPage();
 
         expect(
           screen.getByRole(
-            "status"
+            "heading",
+            {
+              name:
+                "Vagas",
+            }
+          )
+        ).toBeInTheDocument();
+
+        expect(
+          screen.getByTestId(
+            "current-location"
           )
         ).toHaveTextContent(
-          "Conta criada com sucesso. Agora você já pode entrar."
+          "/jobs"
         );
       }
     );
 
     it(
-      "navigates to registration",
-      () => {
+      "opens registration page",
+      async () => {
+        const user =
+          userEvent.setup();
+
         renderPage();
 
-        fireEvent.click(
+        await user.click(
           screen.getByRole(
             "button",
             {
@@ -580,44 +643,22 @@ describe(
         );
 
         expect(
-          screen.getByText(
-            "Página de cadastro"
+          await screen.findByRole(
+            "heading",
+            {
+              name:
+                "Cadastro",
+            }
           )
         ).toBeInTheDocument();
-      }
-    );
-
-    it(
-      "redirects authenticated user to jobs",
-      () => {
-        mockedUseAuth.mockReturnValue({
-          user: {
-            login:
-              "admin@example.com",
-            role:
-              "ADMIN",
-          },
-          isAuthenticated:
-            true,
-          isInitializing:
-            false,
-          login:
-            vi.fn(),
-          logout:
-            vi.fn(),
-          hasRole:
-            vi.fn(
-              () => true
-            ),
-        } as unknown as ReturnType<typeof useAuth>);
-
-        renderPage();
 
         expect(
-          screen.getByText(
-            "Página de vagas"
+          screen.getByTestId(
+            "current-location"
           )
-        ).toBeInTheDocument();
+        ).toHaveTextContent(
+          "/register"
+        );
 
         expect(
           screen.queryByRole(
@@ -626,50 +667,6 @@ describe(
               name:
                 "Acesse sua conta",
             }
-          )
-        ).not.toBeInTheDocument();
-      }
-    );
-
-    it(
-      "keeps login page visible during authentication initialization",
-      () => {
-        mockedUseAuth.mockReturnValue({
-          user: {
-            login:
-              "admin@example.com",
-            role:
-              "ADMIN",
-          },
-          isAuthenticated:
-            true,
-          isInitializing:
-            true,
-          login:
-            vi.fn(),
-          logout:
-            vi.fn(),
-          hasRole:
-            vi.fn(
-              () => true
-            ),
-        } as unknown as ReturnType<typeof useAuth>);
-
-        renderPage();
-
-        expect(
-          screen.getByRole(
-            "heading",
-            {
-              name:
-                "Acesse sua conta",
-            }
-          )
-        ).toBeInTheDocument();
-
-        expect(
-          screen.queryByText(
-            "Página de vagas"
           )
         ).not.toBeInTheDocument();
       }

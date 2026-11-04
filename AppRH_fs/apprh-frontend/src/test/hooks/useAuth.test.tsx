@@ -1,3 +1,7 @@
+import type {
+  ReactNode,
+} from "react";
+
 import {
   renderHook,
 } from "@testing-library/react";
@@ -9,10 +13,6 @@ import {
   vi,
 } from "vitest";
 
-import type {
-  ReactNode,
-} from "react";
-
 import {
   AuthContext,
 } from "../../contexts/AuthContext";
@@ -21,7 +21,60 @@ import {
   useAuth,
 } from "../../hooks/useAuth";
 
+import type {
+  LoginRequest,
+} from "../../interfaces/LoginRequest";
+
+import type {
+  LoginResponse,
+} from "../../interfaces/LoginResponse";
+
 function createWrapper() {
+  const login =
+    vi.fn(
+      async (
+        _credentials: LoginRequest
+      ): Promise<LoginResponse> => ({
+        mfa_required: false,
+        access_token: "jwt-token",
+        token_type: "Bearer",
+        expires_in: 7200,
+      })
+    );
+
+  const completeMfa =
+    vi.fn(
+      async (
+        _code: string
+      ): Promise<LoginResponse> => ({
+        mfa_required: false,
+        access_token: "mfa-jwt-token",
+        token_type: "Bearer",
+        expires_in: 7200,
+      })
+    );
+
+  const processAuthenticationResponse =
+    vi.fn(
+      (
+        _response: LoginResponse
+      ): void => {
+        // Não é necessário executar lógica neste teste.
+      }
+    );
+
+  const logout =
+    vi.fn(
+      (): void => {
+        // Não é necessário executar lógica neste teste.
+      }
+    );
+
+  const hasRole =
+    vi.fn(
+      (): boolean => true
+    );
+
   const contextValue = {
     user: {
       login:
@@ -36,16 +89,15 @@ function createWrapper() {
     isInitializing:
       false,
 
-    login:
-      vi.fn(),
+    login,
 
-    logout:
-      vi.fn(),
+    completeMfa,
 
-    hasRole:
-      vi.fn(
-        () => true
-      ),
+    processAuthenticationResponse,
+
+    logout,
+
+    hasRole,
   };
 
   function Wrapper({
@@ -106,6 +158,67 @@ describe(
           role:
             "ADMIN",
         });
+
+        expect(
+          result.current.isAuthenticated
+        ).toBe(true);
+
+        expect(
+          result.current.isInitializing
+        ).toBe(false);
+      }
+    );
+
+    it(
+      "exposes authentication operations",
+      () => {
+        const {
+          Wrapper,
+        } =
+          createWrapper();
+
+        const {
+          result,
+        } =
+          renderHook(
+            () =>
+              useAuth(),
+            {
+              wrapper:
+                Wrapper,
+            }
+          );
+
+        expect(
+          result.current.login
+        ).toEqual(
+          expect.any(Function)
+        );
+
+        expect(
+          result.current.completeMfa
+        ).toEqual(
+          expect.any(Function)
+        );
+
+        expect(
+          result.current
+            .processAuthenticationResponse
+        ).toEqual(
+          expect.any(Function)
+        );
+
+        expect(
+          result.current.logout
+        ).toEqual(
+          expect.any(Function)
+        );
+
+        expect(
+          result.current.hasRole
+        ).toEqual(
+          expect.any(Function)
+        );
       }
     );
 

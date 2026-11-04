@@ -217,6 +217,17 @@
   line-height: 1.6;
 }
 
+.login-form__success {
+  margin-bottom: 20px;
+  padding: 13px 14px;
+  border: 1px solid rgba(74, 222, 128, 0.25);
+  border-radius: 12px;
+  color: #bbf7d0;
+  font-size: 13px;
+  line-height: 1.5;
+  background: rgba(20, 83, 45, 0.24);
+}
+
 .login-form {
   display: grid;
   gap: 22px;
@@ -307,9 +318,14 @@
     background-color 160ms ease;
 }
 
-.login-form__password-toggle:hover {
+.login-form__password-toggle:hover:not(:disabled) {
   color: #ffffff;
   background: rgba(99, 102, 241, 0.12);
+}
+
+.login-form__password-toggle:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
 }
 
 .login-form__error {
@@ -389,6 +405,91 @@
   opacity: 0.55;
 }
 
+.login-social {
+  display: grid;
+  gap: 16px;
+  margin-top: 24px;
+}
+
+.login-social__separator {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  color: #71809b;
+  font-size: 12px;
+}
+
+.login-social__separator::before {
+  position: absolute;
+  top: 50%;
+  right: 0;
+  left: 0;
+  height: 1px;
+  background: rgba(148, 163, 184, 0.15);
+  content: "";
+}
+
+.login-social__separator span {
+  position: relative;
+  z-index: 1;
+  padding: 0 12px;
+  background: #101a34;
+}
+
+.login-social__buttons {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.login-social__button {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  justify-content: center;
+  min-height: 48px;
+  padding: 0 14px;
+  border: 1px solid #33415f;
+  border-radius: 13px;
+  color: #dbe5f5;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  background: rgba(7, 14, 31, 0.52);
+  cursor: pointer;
+  transition:
+    border-color 160ms ease,
+    background-color 160ms ease,
+    transform 160ms ease;
+}
+
+.login-social__button:hover:not(:disabled) {
+  border-color: #6675dc;
+  background: rgba(30, 41, 79, 0.76);
+  transform: translateY(-1px);
+}
+
+.login-social__button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.login-social__icon {
+  flex: 0 0 auto;
+  width: 20px;
+  height: 20px;
+}
+
+.login-social__button--google
+.login-social__icon {
+  color: #ea4335;
+}
+
+.login-social__button--github
+.login-social__icon {
+  color: #f8fafc;
+}
+
 .login-card__footer {
   display: flex;
   gap: 7px;
@@ -407,7 +508,6 @@
   color: #a5b4fc;
   font: inherit;
   font-weight: 750;
-  text-decoration: none;
   background: transparent;
   cursor: pointer;
 }
@@ -498,6 +598,10 @@
 
   .login-form__control input {
     min-height: 52px;
+  }
+
+  .login-social__buttons {
+    grid-template-columns: 1fr;
   }
 
   .login-card__footer {
