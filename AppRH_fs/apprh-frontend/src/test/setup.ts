@@ -1,22 +1,31 @@
+import "@testing-library/jest-dom/vitest";
+
 import {
   afterEach,
+  vi,
 } from "vitest";
 
 import {
   cleanup,
 } from "@testing-library/react";
 
-import "@testing-library/jest-dom/vitest";
+vi.stubEnv(
+  "VITE_API_URL",
+  "http://localhost:8081"
+);
 
-afterEach(() => {
-  cleanup();
+vi.stubEnv(
+  "VITE_ACCESS_TOKEN_KEY",
+  "apprh.test.access-token"
+);
 
-  localStorage.clear();
-  sessionStorage.clear();
+afterEach(
+  () => {
+    cleanup();
 
-  document.body.classList.remove(
-    "modal-open"
-  );
+    localStorage.clear();
+    sessionStorage.clear();
 
-  document.body.style.overflow = "";
-});
+    vi.clearAllMocks();
+  }
+);

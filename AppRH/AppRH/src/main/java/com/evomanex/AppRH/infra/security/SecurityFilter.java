@@ -2,22 +2,15 @@ package com.evomanex.AppRH.infra.security;
 
 import com.evomanex.AppRH.domain.user.User;
 import com.evomanex.AppRH.repository.UserRepository;
-
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
-
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-
 import org.springframework.http.HttpMethod;
-
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
-
 import org.springframework.stereotype.Component;
-
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
@@ -45,11 +38,13 @@ public class SecurityFilter
     protected boolean shouldNotFilter(
             HttpServletRequest request
     ) {
-        String path =
-                request.getServletPath();
-
         String method =
                 request.getMethod();
+
+        String path =
+                resolvePath(
+                        request
+                );
 
         if (
                 HttpMethod.OPTIONS.matches(
@@ -60,22 +55,39 @@ public class SecurityFilter
         }
 
         if (
+                path.startsWith("/oauth2/")
+                        || path.startsWith("/login/oauth2/")
+        ) {
+            return true;
+        }
+
+        if (
+                path.equals("/actuator/health")
+                        || path.startsWith("/actuator/health/")
+                        || path.equals("/actuator/info")
+                        || path.equals("/swagger-ui.html")
+                        || path.startsWith("/swagger-ui/")
+                        || path.equals("/v3/api-docs")
+                        || path.startsWith("/v3/api-docs/")
+                        || path.equals("/v3/api-docs.yaml")
+                        || path.startsWith("/webjars/")
+                        || path.equals("/favicon.ico")
+                        || path.equals("/error")
+        ) {
+            return true;
+        }
+
+        if (
                 HttpMethod.POST.matches(
                         method
                 )
         ) {
-            return path.equals(
-                    "/auth/login"
-            )
-                    || path.equals(
-                    "/auth/register"
-            )
-                    || path.equals(
-                    "/auth/email/confirm"
-            )
-                    || path.equals(
-                    "/auth/email/resend"
-            );
+            return path.equals("/auth/login")
+                    || path.equals("/auth/register")
+                    || path.equals("/auth/email/confirm")
+                    || path.equals("/auth/email/resend")
+                    || path.equals("/auth/oauth/exchange")
+                    || path.equals("/auth/mfa/verify");
         }
 
         if (
@@ -83,35 +95,11 @@ public class SecurityFilter
                         method
                 )
         ) {
-            return path.equals(
-                    "/api/companies"
-            )
-                    || path.startsWith(
-                    "/api/companies/"
-            )
-                    || path.equals(
-                    "/v3/api-docs"
-            )
-                    || path.startsWith(
-                    "/v3/api-docs/"
-            )
-                    || path.equals(
-                    "/v3/api-docs.yaml"
-            )
-                    || path.equals(
-                    "/swagger-ui.html"
-            )
-                    || path.startsWith(
-                    "/swagger-ui/"
-            )
-                    || path.startsWith(
-                    "/webjars/"
-            );
+            return path.equals("/api/companies")
+                    || path.startsWith("/api/companies/");
         }
 
-        return path.equals(
-                "/error"
-        );
+        return false;
     }
 
     @Override
@@ -155,11 +143,11 @@ public class SecurityFilter
                             login
                     );
 
-            if (userDetails != null) {
-                User user =
-                        (User) userDetails;
-
-                var authentication =
+            if (
+                    userDetails instanceof User user
+                            && user.isEnabled()
+            ) {
+                UsernamePasswordAuthenticationToken authentication =
                         new UsernamePasswordAuthenticationToken(
                                 user,
                                 null,
@@ -197,8 +185,54 @@ public class SecurityFilter
             return null;
         }
 
-        return authorizationHeader
-                .substring(7)
-                .trim();
+        String token =
+                authorizationHeader
+                        .substring(7)
+                        .trim();
+
+        return token.isBlank()
+                ? null
+                : token;
+    }
+
+    private String resolvePath(
+            HttpServletRequest request
+    ) {
+        String servletPath =
+                request.getServletPath();
+
+        if (
+                servletPath != null
+                        && !servletPath.isBlank()
+        ) {
+            return servletPath;
+        }
+
+        String requestUri =
+                request.getRequestURI();
+
+        if (
+                requestUri == null
+                        || requestUri.isBlank()
+        ) {
+            return "/";
+        }
+
+        String contextPath =
+                request.getContextPath();
+
+        if (
+                contextPath != null
+                        && !contextPath.isBlank()
+                        && requestUri.startsWith(
+                        contextPath
+                )
+        ) {
+            return requestUri.substring(
+                    contextPath.length()
+            );
+        }
+
+        return requestUri;
     }
 }

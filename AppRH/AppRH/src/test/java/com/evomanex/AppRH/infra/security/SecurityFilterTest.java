@@ -1,27 +1,30 @@
 package com.evomanex.AppRH.infra.security;
 
 import com.evomanex.AppRH.domain.user.User;
-import com.evomanex.AppRH.domain.user.UserRole;
 import com.evomanex.AppRH.repository.UserRepository;
-
-import jakarta.servlet.FilterChain;
-
+import jakarta.servlet.ServletException;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-
+import org.springframework.mock.web.MockFilterChain;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
-
-import org.springframework.security.core.Authentication;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
+
+import java.io.IOException;
+import java.util.Collection;
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
-
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -36,58 +39,29 @@ class SecurityFilterTest {
     private UserRepository userRepository;
 
     @Mock
-    private FilterChain filterChain;
+    private User user;
 
-    @InjectMocks
     private SecurityFilter securityFilter;
 
+    @BeforeEach
+    void setUp() {
+        SecurityContextHolder.clearContext();
+
+        securityFilter =
+                new SecurityFilter(
+                        tokenService,
+                        userRepository
+                );
+    }
+
     @AfterEach
-    void clearSecurityContext() {
+    void tearDown() {
         SecurityContextHolder.clearContext();
     }
 
     @Test
-    void shouldContinueFilterWhenAuthorizationHeaderIsMissing()
-            throws Exception {
-        MockHttpServletRequest request =
-                new MockHttpServletRequest(
-                        "GET",
-                        "/api/jobs"
-                );
-
-        MockHttpServletResponse response =
-                new MockHttpServletResponse();
-
-        securityFilter.doFilter(
-                request,
-                response,
-                filterChain
-        );
-
-        verify(
-                tokenService,
-                never()
-        ).validateToken(
-                org.mockito.ArgumentMatchers.anyString()
-        );
-
-        verify(
-                filterChain
-        ).doFilter(
-                request,
-                response
-        );
-
-        assertThat(
-                SecurityContextHolder
-                        .getContext()
-                        .getAuthentication()
-        ).isNull();
-    }
-
-    @Test
     void shouldAuthenticateUserWhenBearerTokenIsValid()
-            throws Exception {
+            throws ServletException, IOException {
         MockHttpServletRequest request =
                 new MockHttpServletRequest(
                         "GET",
@@ -102,11 +76,14 @@ class SecurityFilterTest {
         MockHttpServletResponse response =
                 new MockHttpServletResponse();
 
-        User user =
-                new User(
-                        "usuario@example.com",
-                        "$2a$10$encoded",
-                        UserRole.USER
+        MockFilterChain filterChain =
+                new MockFilterChain();
+
+        List<GrantedAuthority> authorities =
+                List.of(
+                        new SimpleGrantedAuthority(
+                                "ROLE_USER"
+                        )
                 );
 
         when(
@@ -125,46 +102,231 @@ class SecurityFilterTest {
                 user
         );
 
-        securityFilter.doFilter(
+        when(
+                user.isEnabled()
+        ).thenReturn(
+                true
+        );
+
+        doReturn(
+                authorities
+        ).when(
+                user
+        ).getAuthorities();
+
+        securityFilter.doFilterInternal(
                 request,
                 response,
                 filterChain
         );
 
-        Authentication authentication =
+        assertThat(
                 SecurityContextHolder
                         .getContext()
-                        .getAuthentication();
-
-        assertThat(
-                authentication
+                        .getAuthentication()
         ).isNotNull();
 
         assertThat(
-                authentication.getPrincipal()
+                SecurityContextHolder
+                        .getContext()
+                        .getAuthentication()
+                        .getPrincipal()
         ).isSameAs(
                 user
         );
 
         assertThat(
-                authentication.getAuthorities()
-        ).extracting(
-                "authority"
-        ).contains(
-                "ROLE_USER"
+                SecurityContextHolder
+                        .getContext()
+                        .getAuthentication()
+                        .isAuthenticated()
+        ).isTrue();
+
+        assertThat(
+                SecurityContextHolder
+                        .getContext()
+                        .getAuthentication()
+                        .getAuthorities()
+        )
+                .extracting(
+                        GrantedAuthority::getAuthority
+                )
+                .containsExactly(
+                        "ROLE_USER"
+                );
+
+        verify(
+                tokenService
+        ).validateToken(
+                "valid-token"
         );
 
         verify(
-                filterChain
-        ).doFilter(
-                request,
-                response
+                userRepository
+        ).findByLogin(
+                "usuario@example.com"
         );
     }
 
     @Test
-    void shouldNotAuthenticateWhenTokenIsInvalid()
-            throws Exception {
+    void shouldNotAuthenticateDisabledUser()
+            throws ServletException, IOException {
+        MockHttpServletRequest request =
+                new MockHttpServletRequest(
+                        "GET",
+                        "/api/jobs"
+                );
+
+        request.addHeader(
+                "Authorization",
+                "Bearer valid-token"
+        );
+
+        MockHttpServletResponse response =
+                new MockHttpServletResponse();
+
+        MockFilterChain filterChain =
+                new MockFilterChain();
+
+        when(
+                tokenService.validateToken(
+                        "valid-token"
+                )
+        ).thenReturn(
+                "usuario@example.com"
+        );
+
+        when(
+                userRepository.findByLogin(
+                        "usuario@example.com"
+                )
+        ).thenReturn(
+                user
+        );
+
+        when(
+                user.isEnabled()
+        ).thenReturn(
+                false
+        );
+
+        securityFilter.doFilterInternal(
+                request,
+                response,
+                filterChain
+        );
+
+        assertThat(
+                SecurityContextHolder
+                        .getContext()
+                        .getAuthentication()
+        ).isNull();
+
+        verify(
+                tokenService
+        ).validateToken(
+                "valid-token"
+        );
+
+        verify(
+                userRepository
+        ).findByLogin(
+                "usuario@example.com"
+        );
+    }
+
+    @Test
+    void shouldContinueWhenAuthorizationHeaderIsAbsent()
+            throws ServletException, IOException {
+        MockHttpServletRequest request =
+                new MockHttpServletRequest(
+                        "GET",
+                        "/api/jobs"
+                );
+
+        MockHttpServletResponse response =
+                new MockHttpServletResponse();
+
+        MockFilterChain filterChain =
+                new MockFilterChain();
+
+        securityFilter.doFilterInternal(
+                request,
+                response,
+                filterChain
+        );
+
+        assertThat(
+                SecurityContextHolder
+                        .getContext()
+                        .getAuthentication()
+        ).isNull();
+
+        verify(
+                tokenService,
+                never()
+        ).validateToken(
+                anyString()
+        );
+
+        verify(
+                userRepository,
+                never()
+        ).findByLogin(
+                anyString()
+        );
+    }
+
+    @Test
+    void shouldContinueWhenAuthorizationHeaderIsNotBearer()
+            throws ServletException, IOException {
+        MockHttpServletRequest request =
+                new MockHttpServletRequest(
+                        "GET",
+                        "/api/jobs"
+                );
+
+        request.addHeader(
+                "Authorization",
+                "Basic credentials"
+        );
+
+        MockHttpServletResponse response =
+                new MockHttpServletResponse();
+
+        MockFilterChain filterChain =
+                new MockFilterChain();
+
+        securityFilter.doFilterInternal(
+                request,
+                response,
+                filterChain
+        );
+
+        assertThat(
+                SecurityContextHolder
+                        .getContext()
+                        .getAuthentication()
+        ).isNull();
+
+        verify(
+                tokenService,
+                never()
+        ).validateToken(
+                anyString()
+        );
+
+        verify(
+                userRepository,
+                never()
+        ).findByLogin(
+                anyString()
+        );
+    }
+
+    @Test
+    void shouldNotAuthenticateWhenTokenValidationReturnsBlankLogin()
+            throws ServletException, IOException {
         MockHttpServletRequest request =
                 new MockHttpServletRequest(
                         "GET",
@@ -179,6 +341,9 @@ class SecurityFilterTest {
         MockHttpServletResponse response =
                 new MockHttpServletResponse();
 
+        MockFilterChain filterChain =
+                new MockFilterChain();
+
         when(
                 tokenService.validateToken(
                         "invalid-token"
@@ -187,7 +352,7 @@ class SecurityFilterTest {
                 ""
         );
 
-        securityFilter.doFilter(
+        securityFilter.doFilterInternal(
                 request,
                 response,
                 filterChain
@@ -203,80 +368,342 @@ class SecurityFilterTest {
                 userRepository,
                 never()
         ).findByLogin(
-                org.mockito.ArgumentMatchers.anyString()
-        );
-
-        verify(
-                filterChain
-        ).doFilter(
-                request,
-                response
+                anyString()
         );
     }
 
     @Test
-    void shouldIgnorePublicLoginEndpoint()
-            throws Exception {
+    void shouldNotAuthenticateWhenRepositoryDoesNotFindUser()
+            throws ServletException, IOException {
         MockHttpServletRequest request =
                 new MockHttpServletRequest(
-                        "POST",
-                        "/auth/login"
+                        "GET",
+                        "/api/jobs"
                 );
+
+        request.addHeader(
+                "Authorization",
+                "Bearer valid-token"
+        );
 
         MockHttpServletResponse response =
                 new MockHttpServletResponse();
 
-        securityFilter.doFilter(
+        MockFilterChain filterChain =
+                new MockFilterChain();
+
+        when(
+                tokenService.validateToken(
+                        "valid-token"
+                )
+        ).thenReturn(
+                "usuario@example.com"
+        );
+
+        when(
+                userRepository.findByLogin(
+                        "usuario@example.com"
+                )
+        ).thenReturn(
+                null
+        );
+
+        securityFilter.doFilterInternal(
                 request,
                 response,
                 filterChain
         );
 
-        verify(
-                tokenService,
-                never()
-        ).validateToken(
-                org.mockito.ArgumentMatchers.anyString()
+        assertThat(
+                SecurityContextHolder
+                        .getContext()
+                        .getAuthentication()
+        ).isNull();
+    }
+
+    @Test
+    void shouldPreserveExistingAuthentication()
+            throws ServletException, IOException {
+        UserDetails existingPrincipal =
+                org.springframework.security.core.userdetails.User
+                        .withUsername(
+                                "existing@example.com"
+                        )
+                        .password(
+                                "password"
+                        )
+                        .authorities(
+                                "ROLE_USER"
+                        )
+                        .build();
+
+        UsernamePasswordAuthenticationToken existingAuthentication =
+                new UsernamePasswordAuthenticationToken(
+                        existingPrincipal,
+                        null,
+                        existingPrincipal.getAuthorities()
+                );
+
+        SecurityContextHolder
+                .getContext()
+                .setAuthentication(
+                        existingAuthentication
+                );
+
+        MockHttpServletRequest request =
+                new MockHttpServletRequest(
+                        "GET",
+                        "/api/jobs"
+                );
+
+        request.addHeader(
+                "Authorization",
+                "Bearer valid-token"
+        );
+
+        MockHttpServletResponse response =
+                new MockHttpServletResponse();
+
+        MockFilterChain filterChain =
+                new MockFilterChain();
+
+        when(
+                tokenService.validateToken(
+                        "valid-token"
+                )
+        ).thenReturn(
+                "usuario@example.com"
+        );
+
+        securityFilter.doFilterInternal(
+                request,
+                response,
+                filterChain
+        );
+
+        assertThat(
+                SecurityContextHolder
+                        .getContext()
+                        .getAuthentication()
+        ).isSameAs(
+                existingAuthentication
         );
 
         verify(
-                filterChain
-        ).doFilter(
-                request,
-                response
+                userRepository,
+                never()
+        ).findByLogin(
+                anyString()
         );
     }
 
     @Test
-    void shouldIgnoreOptionsRequest()
-            throws Exception {
+    void shouldSkipOptionsRequest() {
         MockHttpServletRequest request =
                 new MockHttpServletRequest(
                         "OPTIONS",
                         "/api/jobs"
                 );
 
-        MockHttpServletResponse response =
-                new MockHttpServletResponse();
+        assertThat(
+                securityFilter.shouldNotFilter(
+                        request
+                )
+        ).isTrue();
+    }
 
-        securityFilter.doFilter(
-                request,
-                response,
-                filterChain
-        );
+    @Test
+    void shouldSkipLoginEndpoint() {
+        MockHttpServletRequest request =
+                new MockHttpServletRequest(
+                        "POST",
+                        "/auth/login"
+                );
 
-        verify(
-                tokenService,
-                never()
-        ).validateToken(
-                org.mockito.ArgumentMatchers.anyString()
-        );
+        assertThat(
+                securityFilter.shouldNotFilter(
+                        request
+                )
+        ).isTrue();
+    }
 
-        verify(
-                filterChain
-        ).doFilter(
-                request,
-                response
-        );
+    @Test
+    void shouldSkipRegistrationEndpoint() {
+        MockHttpServletRequest request =
+                new MockHttpServletRequest(
+                        "POST",
+                        "/auth/register"
+                );
+
+        assertThat(
+                securityFilter.shouldNotFilter(
+                        request
+                )
+        ).isTrue();
+    }
+
+    @Test
+    void shouldSkipEmailConfirmationEndpoint() {
+        MockHttpServletRequest request =
+                new MockHttpServletRequest(
+                        "POST",
+                        "/auth/email/confirm"
+                );
+
+        assertThat(
+                securityFilter.shouldNotFilter(
+                        request
+                )
+        ).isTrue();
+    }
+
+    @Test
+    void shouldSkipEmailResendEndpoint() {
+        MockHttpServletRequest request =
+                new MockHttpServletRequest(
+                        "POST",
+                        "/auth/email/resend"
+                );
+
+        assertThat(
+                securityFilter.shouldNotFilter(
+                        request
+                )
+        ).isTrue();
+    }
+
+    @Test
+    void shouldSkipOAuthExchangeEndpoint() {
+        MockHttpServletRequest request =
+                new MockHttpServletRequest(
+                        "POST",
+                        "/auth/oauth/exchange"
+                );
+
+        assertThat(
+                securityFilter.shouldNotFilter(
+                        request
+                )
+        ).isTrue();
+    }
+
+    @Test
+    void shouldSkipMfaVerificationEndpoint() {
+        MockHttpServletRequest request =
+                new MockHttpServletRequest(
+                        "POST",
+                        "/auth/mfa/verify"
+                );
+
+        assertThat(
+                securityFilter.shouldNotFilter(
+                        request
+                )
+        ).isTrue();
+    }
+
+    @Test
+    void shouldSkipOAuthAuthorizationEndpoint() {
+        MockHttpServletRequest request =
+                new MockHttpServletRequest(
+                        "GET",
+                        "/oauth2/authorization/google"
+                );
+
+        assertThat(
+                securityFilter.shouldNotFilter(
+                        request
+                )
+        ).isTrue();
+    }
+
+    @Test
+    void shouldSkipOAuthCallbackEndpoint() {
+        MockHttpServletRequest request =
+                new MockHttpServletRequest(
+                        "GET",
+                        "/login/oauth2/code/google"
+                );
+
+        assertThat(
+                securityFilter.shouldNotFilter(
+                        request
+                )
+        ).isTrue();
+    }
+
+    @Test
+    void shouldSkipPublicCompaniesEndpoint() {
+        MockHttpServletRequest request =
+                new MockHttpServletRequest(
+                        "GET",
+                        "/api/companies"
+                );
+
+        assertThat(
+                securityFilter.shouldNotFilter(
+                        request
+                )
+        ).isTrue();
+    }
+
+    @Test
+    void shouldSkipSwaggerEndpoint() {
+        MockHttpServletRequest request =
+                new MockHttpServletRequest(
+                        "GET",
+                        "/swagger-ui/index.html"
+                );
+
+        assertThat(
+                securityFilter.shouldNotFilter(
+                        request
+                )
+        ).isTrue();
+    }
+
+    @Test
+    void shouldSkipHealthEndpoint() {
+        MockHttpServletRequest request =
+                new MockHttpServletRequest(
+                        "GET",
+                        "/actuator/health"
+                );
+
+        assertThat(
+                securityFilter.shouldNotFilter(
+                        request
+                )
+        ).isTrue();
+    }
+
+    @Test
+    void shouldFilterProtectedJobsEndpoint() {
+        MockHttpServletRequest request =
+                new MockHttpServletRequest(
+                        "GET",
+                        "/api/jobs"
+                );
+
+        assertThat(
+                securityFilter.shouldNotFilter(
+                        request
+                )
+        ).isFalse();
+    }
+
+    @Test
+    void shouldFilterProtectedMfaSetupEndpoint() {
+        MockHttpServletRequest request =
+                new MockHttpServletRequest(
+                        "POST",
+                        "/api/account/mfa/totp/setup"
+                );
+
+        assertThat(
+                securityFilter.shouldNotFilter(
+                        request
+                )
+        ).isFalse();
     }
 }

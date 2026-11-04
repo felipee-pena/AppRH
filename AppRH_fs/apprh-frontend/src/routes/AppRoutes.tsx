@@ -9,6 +9,10 @@ import {
 } from "../components/ProtectedRoute";
 
 import {
+  AccountSecurityPage,
+} from "../pages/account-security/AccountSecurityPage";
+
+import {
   EmailConfirmationPage,
 } from "../pages/EmailConfirmationPage";
 
@@ -17,28 +21,36 @@ import {
 } from "../pages/EmailVerificationPendingPage";
 
 import {
-  LoginPage,
-} from "../pages/login/LoginPage";
-
-import {
-  RegisterPage,
-} from "../pages/register/RegisterPage";
-
-import {
-  JobsPage,
-} from "../pages/jobs/JobsPage";
+  ForbiddenPage,
+} from "../pages/forbidden/ForbiddenPage";
 
 import {
   JobManagementPage,
 } from "../pages/job-management/JobManagementPage";
 
 import {
-  UsersPage,
-} from "../pages/users/UsersPage";
+  JobsPage,
+} from "../pages/jobs/JobsPage";
 
 import {
-  ForbiddenPage,
-} from "../pages/forbidden/ForbiddenPage";
+  LoginPage,
+} from "../pages/login/LoginPage";
+
+import {
+  MfaVerifyPage,
+} from "../pages/mfa-verify/MfaVerifyPage";
+
+import {
+  OAuthCallbackPage,
+} from "../pages/oauth-callback/OAuthCallbackPage";
+
+import {
+  RegisterPage,
+} from "../pages/register/RegisterPage";
+
+import {
+  UsersPage,
+} from "../pages/users/UsersPage";
 
 export function AppRoutes() {
   return (
@@ -72,10 +84,33 @@ export function AppRoutes() {
       />
 
       <Route
+        path="/oauth/callback"
+        element={
+          <OAuthCallbackPage />
+        }
+      />
+
+      <Route
+        path="/mfa/verify"
+        element={
+          <MfaVerifyPage />
+        }
+      />
+
+      <Route
         path="/jobs"
         element={
           <ProtectedRoute>
             <JobsPage />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/account/security"
+        element={
+          <ProtectedRoute>
+            <AccountSecurityPage />
           </ProtectedRoute>
         }
       />

@@ -3,6 +3,8 @@ import {
   useEffect,
   useState,
   type FormEvent,
+  type KeyboardEvent,
+  type MouseEvent,
 } from "react";
 
 import {
@@ -85,8 +87,7 @@ export function EditJobModal({
     }
 
     mutate({
-      code:
-        job.code,
+      code: job.code,
 
       job: {
         name:
@@ -101,7 +102,7 @@ export function EditJobModal({
 
         contactEmail:
           contactEmail.trim()
-            || null,
+          || null,
 
         companyId:
           job.company?.id
@@ -127,6 +128,38 @@ export function EditJobModal({
       ]
     );
 
+  function handleOverlayMouseDown(
+    event: MouseEvent<HTMLDivElement>
+  ) {
+    if (
+      event.target
+      !== event.currentTarget
+    ) {
+      return;
+    }
+
+    handleClose();
+  }
+
+  function handleOverlayKeyDown(
+    event: KeyboardEvent<HTMLDivElement>
+  ) {
+    if (
+      event.target
+      !== event.currentTarget
+    ) {
+      return;
+    }
+
+    if (
+      event.key === "Enter"
+      || event.key === " "
+    ) {
+      event.preventDefault();
+      handleClose();
+    }
+  }
+
   useEffect(
     () => {
       document.body.classList.add(
@@ -134,7 +167,7 @@ export function EditJobModal({
       );
 
       function handleEscape(
-        event: KeyboardEvent
+        event: globalThis.KeyboardEvent
       ) {
         if (
           event.key === "Escape"
@@ -181,17 +214,18 @@ export function EditJobModal({
   return createPortal(
     <div
       className="job-modal__overlay"
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="edit-job-title"
-      onMouseDown={handleClose}
+      role="button"
+      tabIndex={0}
+      aria-label="Fechar modal de edição de vaga"
+      onMouseDown={handleOverlayMouseDown}
+      onKeyDown={handleOverlayKeyDown}
     >
       <section
         className="job-modal"
-        onMouseDown={
-          (event) =>
-            event.stopPropagation()
-        }
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="edit-job-title"
+        aria-describedby="edit-job-description"
       >
         <header className="job-modal__header">
           <div>
@@ -203,7 +237,7 @@ export function EditJobModal({
               Editar vaga
             </h2>
 
-            <p>
+            <p id="edit-job-description">
               Atualize os dados da vaga selecionada.
             </p>
           </div>
@@ -233,11 +267,10 @@ export function EditJobModal({
               type="text"
               value={name}
               disabled={isPending}
-              onChange={
-                (event) =>
-                  setName(
-                    event.target.value
-                  )
+              onChange={(event) =>
+                setName(
+                  event.target.value
+                )
               }
               autoFocus
               required
@@ -254,11 +287,10 @@ export function EditJobModal({
               type="date"
               value={expirationDate}
               disabled={isPending}
-              onChange={
-                (event) =>
-                  setExpirationDate(
-                    event.target.value
-                  )
+              onChange={(event) =>
+                setExpirationDate(
+                  event.target.value
+                )
               }
               required
             />
@@ -276,20 +308,18 @@ export function EditJobModal({
               step="0.01"
               value={salary}
               disabled={isPending}
-              onChange={
-                (event) => {
-                  const numericValue =
-                    event.target.valueAsNumber;
+              onChange={(event) => {
+                const numericValue =
+                  event.target.valueAsNumber;
 
-                  setSalary(
-                    Number.isNaN(
-                      numericValue
-                    )
-                      ? 0
-                      : numericValue
-                  );
-                }
-              }
+                setSalary(
+                  Number.isNaN(
+                    numericValue
+                  )
+                    ? 0
+                    : numericValue
+                );
+              }}
               required
             />
           </div>
@@ -304,32 +334,30 @@ export function EditJobModal({
               type="email"
               value={contactEmail}
               disabled={isPending}
-              onChange={
-                (event) =>
-                  setContactEmail(
-                    event.target.value
-                  )
+              onChange={(event) =>
+                setContactEmail(
+                  event.target.value
+                )
               }
               placeholder="vagas@empresa.com"
             />
           </div>
 
           <div className="job-modal__field job-modal__field--full">
-            <label htmlFor="edit-job-description">
+            <label htmlFor="edit-job-description-field">
               Descrição da vaga
             </label>
 
             <textarea
-              id="edit-job-description"
+              id="edit-job-description-field"
               rows={5}
               maxLength={254}
               value={description}
               disabled={isPending}
-              onChange={
-                (event) =>
-                  setDescription(
-                    event.target.value
-                  )
+              onChange={(event) =>
+                setDescription(
+                  event.target.value
+                )
               }
               required
             />

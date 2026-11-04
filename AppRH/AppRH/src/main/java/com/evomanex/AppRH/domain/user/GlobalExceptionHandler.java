@@ -1,31 +1,25 @@
 package com.evomanex.AppRH.domain.user;
 
+import com.evomanex.AppRH.infra.security.oauth.OAuthAccountLinkException;
 import jakarta.validation.ConstraintViolationException;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 import org.springframework.dao.DataIntegrityViolationException;
-
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
-
 import org.springframework.security.access.AccessDeniedException;
-
-import org.springframework.web.HttpRequestMethodNotSupportedException;
-
-import org.springframework.web.bind.MethodArgumentNotValidException;
-import org.springframework.web.bind.annotation.ExceptionHandler;
-import org.springframework.web.bind.annotation.RestControllerAdvice;
-
-import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.DisabledException;
 import org.springframework.security.authentication.LockedException;
+import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
+import org.springframework.web.HttpRequestMethodNotSupportedException;
+import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.server.ResponseStatusException;
-
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import java.util.LinkedHashMap;
@@ -39,7 +33,10 @@ public class GlobalExceptionHandler {
             LoggerFactory.getLogger(
                     GlobalExceptionHandler.class
             );
-    @ExceptionHandler(DisabledException.class)
+
+    @ExceptionHandler(
+            DisabledException.class
+    )
     public ResponseEntity<ApiErrorResponseDTO>
     handleDisabledAccount(
             DisabledException exception
@@ -47,16 +44,23 @@ public class GlobalExceptionHandler {
         ApiErrorResponseDTO response =
                 new ApiErrorResponseDTO(
                         HttpStatus.UNAUTHORIZED.value(),
-                        "Confirme seu e-mail ou aguarde a aprovação da conta",
+                        "Confirme seu e-mail ou aguarde "
+                                + "a aprovação da conta",
                         Map.of()
                 );
 
         return ResponseEntity
-                .status(HttpStatus.UNAUTHORIZED)
-                .body(response);
+                .status(
+                        HttpStatus.UNAUTHORIZED
+                )
+                .body(
+                        response
+                );
     }
 
-    @ExceptionHandler(LockedException.class)
+    @ExceptionHandler(
+            LockedException.class
+    )
     public ResponseEntity<ApiErrorResponseDTO>
     handleLockedAccount(
             LockedException exception
@@ -69,11 +73,17 @@ public class GlobalExceptionHandler {
                 );
 
         return ResponseEntity
-                .status(HttpStatus.FORBIDDEN)
-                .body(response);
+                .status(
+                        HttpStatus.FORBIDDEN
+                )
+                .body(
+                        response
+                );
     }
 
-    @ExceptionHandler(BadCredentialsException.class)
+    @ExceptionHandler(
+            BadCredentialsException.class
+    )
     public ResponseEntity<ApiErrorResponseDTO>
     handleBadCredentials(
             BadCredentialsException exception
@@ -86,8 +96,64 @@ public class GlobalExceptionHandler {
                 );
 
         return ResponseEntity
-                .status(HttpStatus.UNAUTHORIZED)
-                .body(response);
+                .status(
+                        HttpStatus.UNAUTHORIZED
+                )
+                .body(
+                        response
+                );
+    }
+
+    @ExceptionHandler(
+            OAuthAccountLinkException.class
+    )
+    public ResponseEntity<ApiErrorResponseDTO>
+    handleOAuthAccountLinkException(
+            OAuthAccountLinkException exception
+    ) {
+        ApiErrorResponseDTO response =
+                new ApiErrorResponseDTO(
+                        HttpStatus.CONFLICT.value(),
+                        exception.getMessage(),
+                        Map.of()
+                );
+
+        return ResponseEntity
+                .status(
+                        HttpStatus.CONFLICT
+                )
+                .body(
+                        response
+                );
+    }
+
+    @ExceptionHandler(
+            OAuth2AuthenticationException.class
+    )
+    public ResponseEntity<ApiErrorResponseDTO>
+    handleOAuth2AuthenticationException(
+            OAuth2AuthenticationException exception
+    ) {
+        LOGGER.warn(
+                "Falha na autenticação OAuth: {}",
+                exception.getMessage()
+        );
+
+        ApiErrorResponseDTO response =
+                new ApiErrorResponseDTO(
+                        HttpStatus.UNAUTHORIZED.value(),
+                        "Não foi possível autenticar "
+                                + "com o provedor selecionado",
+                        Map.of()
+                );
+
+        return ResponseEntity
+                .status(
+                        HttpStatus.UNAUTHORIZED
+                )
+                .body(
+                        response
+                );
     }
 
     @ExceptionHandler(
@@ -119,8 +185,12 @@ public class GlobalExceptionHandler {
                 );
 
         return ResponseEntity
-                .status(HttpStatus.BAD_REQUEST)
-                .body(response);
+                .status(
+                        HttpStatus.BAD_REQUEST
+                )
+                .body(
+                        response
+                );
     }
 
     @ExceptionHandler(
@@ -153,8 +223,12 @@ public class GlobalExceptionHandler {
                 );
 
         return ResponseEntity
-                .status(HttpStatus.BAD_REQUEST)
-                .body(response);
+                .status(
+                        HttpStatus.BAD_REQUEST
+                )
+                .body(
+                        response
+                );
     }
 
     @ExceptionHandler(
@@ -172,17 +246,23 @@ public class GlobalExceptionHandler {
         ApiErrorResponseDTO response =
                 new ApiErrorResponseDTO(
                         HttpStatus.BAD_REQUEST.value(),
-                        "O corpo da requisição possui JSON inválido",
+                        "O corpo da requisição possui "
+                                + "JSON inválido",
                         Map.of(
                                 "requestBody",
-                                "Revise os campos, tipos, vírgulas "
-                                        + "e aspas do JSON enviado"
+                                "Revise os campos, tipos, "
+                                        + "vírgulas e aspas "
+                                        + "do JSON enviado"
                         )
                 );
 
         return ResponseEntity
-                .status(HttpStatus.BAD_REQUEST)
-                .body(response);
+                .status(
+                        HttpStatus.BAD_REQUEST
+                )
+                .body(
+                        response
+                );
     }
 
     @ExceptionHandler(
@@ -205,7 +285,7 @@ public class GlobalExceptionHandler {
                         || "companyId".equals(parameter)
         ) {
             message =
-                    "O identificador deve ser numérico";
+                    "O identificador possui formato inválido";
         } else {
             message =
                     "O valor informado possui formato inválido";
@@ -222,8 +302,12 @@ public class GlobalExceptionHandler {
                 );
 
         return ResponseEntity
-                .status(HttpStatus.BAD_REQUEST)
-                .body(response);
+                .status(
+                        HttpStatus.BAD_REQUEST
+                )
+                .body(
+                        response
+                );
     }
 
     @ExceptionHandler(
@@ -234,14 +318,19 @@ public class GlobalExceptionHandler {
             HttpRequestMethodNotSupportedException exception
     ) {
         String allowedMethods =
-                exception.getSupportedHttpMethods() == null
+                exception.getSupportedHttpMethods()
+                        == null
                         ? "Nenhum método informado"
                         : exception
                         .getSupportedHttpMethods()
                         .stream()
-                        .map(HttpMethod::name)
+                        .map(
+                                HttpMethod::name
+                        )
                         .collect(
-                                Collectors.joining(", ")
+                                Collectors.joining(
+                                        ", "
+                                )
                         );
 
         Map<String, String> errors =
@@ -259,14 +348,21 @@ public class GlobalExceptionHandler {
 
         ApiErrorResponseDTO response =
                 new ApiErrorResponseDTO(
-                        HttpStatus.METHOD_NOT_ALLOWED.value(),
-                        "Método HTTP não permitido para este endpoint",
+                        HttpStatus
+                                .METHOD_NOT_ALLOWED
+                                .value(),
+                        "Método HTTP não permitido "
+                                + "para este endpoint",
                         errors
                 );
 
         return ResponseEntity
-                .status(HttpStatus.METHOD_NOT_ALLOWED)
-                .body(response);
+                .status(
+                        HttpStatus.METHOD_NOT_ALLOWED
+                )
+                .body(
+                        response
+                );
     }
 
     @ExceptionHandler(
@@ -284,8 +380,12 @@ public class GlobalExceptionHandler {
                 );
 
         return ResponseEntity
-                .status(HttpStatus.NOT_FOUND)
-                .body(response);
+                .status(
+                        HttpStatus.NOT_FOUND
+                )
+                .body(
+                        response
+                );
     }
 
     @ExceptionHandler(
@@ -297,7 +397,8 @@ public class GlobalExceptionHandler {
     ) {
         String message =
                 exception.getReason() == null
-                        ? "Não foi possível processar a solicitação"
+                        ? "Não foi possível processar "
+                        + "a solicitação"
                         : exception.getReason();
 
         ApiErrorResponseDTO response =
@@ -313,7 +414,9 @@ public class GlobalExceptionHandler {
                 .status(
                         exception.getStatusCode()
                 )
-                .body(response);
+                .body(
+                        response
+                );
     }
 
     @ExceptionHandler(
@@ -340,8 +443,12 @@ public class GlobalExceptionHandler {
                 );
 
         return ResponseEntity
-                .status(HttpStatus.FORBIDDEN)
-                .body(response);
+                .status(
+                        HttpStatus.FORBIDDEN
+                )
+                .body(
+                        response
+                );
     }
 
     @ExceptionHandler(
@@ -352,7 +459,8 @@ public class GlobalExceptionHandler {
             DataIntegrityViolationException exception
     ) {
         LOGGER.error(
-                "Violação de integridade ao processar requisição",
+                "Violação de integridade "
+                        + "ao processar requisição",
                 exception
         );
 
@@ -365,8 +473,58 @@ public class GlobalExceptionHandler {
                 );
 
         return ResponseEntity
-                .status(HttpStatus.CONFLICT)
-                .body(response);
+                .status(
+                        HttpStatus.CONFLICT
+                )
+                .body(
+                        response
+                );
+    }
+
+    @ExceptionHandler(
+            IllegalArgumentException.class
+    )
+    public ResponseEntity<ApiErrorResponseDTO>
+    handleIllegalArgumentException(
+            IllegalArgumentException exception
+    ) {
+        ApiErrorResponseDTO response =
+                new ApiErrorResponseDTO(
+                        HttpStatus.BAD_REQUEST.value(),
+                        exception.getMessage(),
+                        Map.of()
+                );
+
+        return ResponseEntity
+                .status(
+                        HttpStatus.BAD_REQUEST
+                )
+                .body(
+                        response
+                );
+    }
+
+    @ExceptionHandler(
+            IllegalStateException.class
+    )
+    public ResponseEntity<ApiErrorResponseDTO>
+    handleIllegalStateException(
+            IllegalStateException exception
+    ) {
+        ApiErrorResponseDTO response =
+                new ApiErrorResponseDTO(
+                        HttpStatus.CONFLICT.value(),
+                        exception.getMessage(),
+                        Map.of()
+                );
+
+        return ResponseEntity
+                .status(
+                        HttpStatus.CONFLICT
+                )
+                .body(
+                        response
+                );
     }
 
     @ExceptionHandler(
@@ -377,15 +535,20 @@ public class GlobalExceptionHandler {
             Exception exception
     ) {
         LOGGER.error(
-                "Erro interno inesperado. Tipo: {}. Mensagem: {}",
-                exception.getClass().getName(),
+                "Erro interno inesperado. "
+                        + "Tipo: {}. Mensagem: {}",
+                exception
+                        .getClass()
+                        .getName(),
                 exception.getMessage(),
                 exception
         );
 
         ApiErrorResponseDTO response =
                 new ApiErrorResponseDTO(
-                        HttpStatus.INTERNAL_SERVER_ERROR.value(),
+                        HttpStatus
+                                .INTERNAL_SERVER_ERROR
+                                .value(),
                         "Ocorreu um erro interno inesperado",
                         Map.of()
                 );
@@ -394,6 +557,8 @@ public class GlobalExceptionHandler {
                 .status(
                         HttpStatus.INTERNAL_SERVER_ERROR
                 )
-                .body(response);
+                .body(
+                        response
+                );
     }
 }

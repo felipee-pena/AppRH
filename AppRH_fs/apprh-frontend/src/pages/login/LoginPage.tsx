@@ -1,7 +1,15 @@
 import {
+  useMemo,
   useState,
   type FormEvent,
 } from "react";
+
+import axios from "axios";
+
+import {
+  FaGithub,
+  FaGoogle,
+} from "react-icons/fa";
 
 import {
   Navigate,
@@ -9,13 +17,49 @@ import {
   useNavigate,
 } from "react-router-dom";
 
-import { useAuth } from "../../hooks/useAuth";
+import {
+  useAuth,
+} from "../../hooks/useAuth";
+
+import type {
+  ApiErrorResponse,
+} from "../../interfaces/ApiErrorResponse";
+
+import {
+  startGitHubLogin,
+  startGoogleLogin,
+} from "../../services/auth-service";
 
 import "./login-page.css";
 
 interface LocationState {
   from?: string;
   registrationSuccess?: boolean;
+}
+
+function extractErrorMessage(
+  error: unknown
+): string {
+  if (
+    axios.isAxiosError<ApiErrorResponse>(
+      error
+    )
+  ) {
+    return (
+      error.response?.data?.message
+      ?? "Login ou senha inválidos. "
+      + "Confira os dados e tente novamente."
+    );
+  }
+
+  if (error instanceof Error) {
+    return error.message;
+  }
+
+  return (
+    "Login ou senha inválidos. "
+    + "Confira os dados e tente novamente."
+  );
 }
 
 export function LoginPage() {
@@ -25,32 +69,77 @@ export function LoginPage() {
   const [password, setPassword] =
     useState("");
 
-  const [showPassword, setShowPassword] =
-    useState(false);
+  const [
+    showPassword,
+    setShowPassword,
+  ] = useState(false);
 
-  const [errorMessage, setErrorMessage] =
-    useState("");
+  const [
+    errorMessage,
+    setErrorMessage,
+  ] = useState("");
 
-  const [isSubmitting, setIsSubmitting] =
-    useState(false);
+  const [
+    isSubmitting,
+    setIsSubmitting,
+  ] = useState(false);
 
-  const auth = useAuth();
-  const navigate = useNavigate();
-  const location = useLocation();
+  const auth =
+    useAuth();
+
+  const navigate =
+    useNavigate();
+
+  const location =
+    useLocation();
 
   const locationState =
-    location.state as LocationState | null;
+    location.state as
+      | LocationState
+      | null;
 
-  /*
-   * Usuário autenticado não deve permanecer
-   * na página de login.
-   *
-   * Todos os hooks foram executados antes
-   * deste retorno condicional.
-   */
+  const queryMessage =
+    useMemo(
+      () => {
+        const parameters =
+          new URLSearchParams(
+            location.search
+          );
+
+        const oauthError =
+          parameters.get(
+            "oauthError"
+          );
+
+        if (oauthError) {
+          return oauthError;
+        }
+
+        if (
+          parameters.get(
+            "sessionExpired"
+          ) === "true"
+        ) {
+          return (
+            "Sua sessão expirou. "
+            + "Entre novamente."
+          );
+        }
+
+        return "";
+      },
+      [
+        location.search,
+      ]
+    );
+
+  const displayedError =
+    errorMessage
+    || queryMessage;
+
   if (
-    auth.isAuthenticated &&
-    !auth.isInitializing
+    auth.isAuthenticated
+    && !auth.isInitializing
   ) {
     return (
       <Navigate
@@ -69,25 +158,59 @@ export function LoginPage() {
     setIsSubmitting(true);
 
     try {
-      await auth.login({
-        login: login.trim(),
-        password,
-      });
+      const response =
+        await auth.login({
+          login:
+            login.trim(),
+          password,
+        });
+
+      if (
+        response.mfa_required
+        && response.challenge_token
+      ) {
+        navigate(
+          "/mfa/verify",
+          {
+            replace: true,
+          }
+        );
+
+        return;
+      }
 
       navigate(
-        locationState?.from ?? "/jobs",
+        locationState?.from
+          ?? "/jobs",
         {
           replace: true,
         }
       );
-    } catch {
+    } catch (error) {
       setErrorMessage(
-        "Login ou senha inválidos. "
-          + "Confira os dados e tente novamente."
+        extractErrorMessage(
+          error
+        )
       );
     } finally {
       setIsSubmitting(false);
     }
+  }
+
+  function handleGoogleLogin() {
+    setErrorMessage("");
+    startGoogleLogin();
+  }
+
+  function handleGitHubLogin() {
+    setErrorMessage("");
+    startGitHubLogin();
+  }
+
+  function handleRegistration() {
+    navigate(
+      "/register"
+    );
   }
 
   return (
@@ -123,10 +246,14 @@ export function LoginPage() {
 
           <div className="login-presentation__features">
             <article>
-              <span>01</span>
+              <span>
+                01
+              </span>
 
               <div>
-                <strong>Para candidatos</strong>
+                <strong>
+                  Para candidatos
+                </strong>
 
                 <p>
                   Consulte oportunidades disponíveis.
@@ -135,7 +262,9 @@ export function LoginPage() {
             </article>
 
             <article>
-              <span>02</span>
+              <span>
+                02
+              </span>
 
               <div>
                 <strong>
@@ -149,7 +278,9 @@ export function LoginPage() {
             </article>
 
             <article>
-              <span>03</span>
+              <span>
+                03
+              </span>
 
               <div>
                 <strong>
@@ -170,14 +301,18 @@ export function LoginPage() {
               Bem-vindo
             </span>
 
-            <h2>Acesse sua conta</h2>
+            <h2>
+              Acesse sua conta
+            </h2>
 
             <p>
-              Informe suas credenciais para continuar.
+              Informe suas credenciais
+              para continuar.
             </p>
           </header>
 
-          {locationState?.registrationSuccess && (
+          {locationState
+            ?.registrationSuccess && (
             <div
               className="login-form__success"
               role="status"
@@ -213,10 +348,15 @@ export function LoginPage() {
                   placeholder="Digite seu login"
                   value={login}
                   disabled={isSubmitting}
-                  onChange={(event) => {
-                    setLogin(event.target.value);
-                    setErrorMessage("");
-                  }}
+                  onChange={
+                    event => {
+                      setLogin(
+                        event.target.value
+                      );
+
+                      setErrorMessage("");
+                    }
+                  }
                   required
                 />
               </div>
@@ -247,10 +387,15 @@ export function LoginPage() {
                   placeholder="Digite sua senha"
                   value={password}
                   disabled={isSubmitting}
-                  onChange={(event) => {
-                    setPassword(event.target.value);
-                    setErrorMessage("");
-                  }}
+                  onChange={
+                    event => {
+                      setPassword(
+                        event.target.value
+                      );
+
+                      setErrorMessage("");
+                    }
+                  }
                   required
                 />
 
@@ -262,12 +407,15 @@ export function LoginPage() {
                       ? "Ocultar senha"
                       : "Mostrar senha"
                   }
-                  onClick={() => {
-                    setShowPassword(
-                      (currentValue) =>
-                        !currentValue
-                    );
-                  }}
+                  disabled={isSubmitting}
+                  onClick={
+                    () => {
+                      setShowPassword(
+                        currentValue =>
+                          !currentValue
+                      );
+                    }
+                  }
                 >
                   {showPassword
                     ? "Ocultar"
@@ -276,7 +424,7 @@ export function LoginPage() {
               </div>
             </div>
 
-            {errorMessage && (
+            {displayedError && (
               <div
                 className="login-form__error"
                 role="alert"
@@ -285,7 +433,9 @@ export function LoginPage() {
                   !
                 </span>
 
-                <p>{errorMessage}</p>
+                <p>
+                  {displayedError}
+                </p>
               </div>
             )}
 
@@ -293,9 +443,9 @@ export function LoginPage() {
               type="submit"
               className="login-form__submit"
               disabled={
-                isSubmitting ||
-                !login.trim() ||
-                !password
+                isSubmitting
+                || !login.trim()
+                || !password
               }
             >
               <span>
@@ -312,6 +462,51 @@ export function LoginPage() {
             </button>
           </form>
 
+          <div
+            className="login-social"
+            aria-label="Outras formas de acesso"
+          >
+            <div className="login-social__separator">
+              <span>
+                ou continue com
+              </span>
+            </div>
+
+            <div className="login-social__buttons">
+              <button
+                type="button"
+                className="login-social__button login-social__button--google"
+                disabled={isSubmitting}
+                onClick={handleGoogleLogin}
+              >
+                <FaGoogle
+                  className="login-social__icon"
+                  aria-hidden="true"
+                />
+
+                <span>
+                  Google
+                </span>
+              </button>
+
+              <button
+                type="button"
+                className="login-social__button login-social__button--github"
+                disabled={isSubmitting}
+                onClick={handleGitHubLogin}
+              >
+                <FaGithub
+                  className="login-social__icon"
+                  aria-hidden="true"
+                />
+
+                <span>
+                  GitHub
+                </span>
+              </button>
+            </div>
+          </div>
+
           <footer className="login-card__footer">
             <span>
               Ainda não possui cadastro?
@@ -319,9 +514,7 @@ export function LoginPage() {
 
             <button
               type="button"
-              onClick={() => {
-                navigate("/register");
-              }}
+              onClick={handleRegistration}
             >
               Criar conta de candidato
             </button>
@@ -330,7 +523,9 @@ export function LoginPage() {
       </section>
 
       <footer className="login-page__footer">
-        <span>AppRH</span>
+        <span>
+          AppRH
+        </span>
 
         <span>
           Gestão de vagas e candidaturas

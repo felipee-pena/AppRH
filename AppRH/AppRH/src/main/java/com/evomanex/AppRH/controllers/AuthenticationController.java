@@ -3,37 +3,27 @@ package com.evomanex.AppRH.controllers;
 import com.evomanex.AppRH.domain.user.AuthenticationDTO;
 import com.evomanex.AppRH.domain.user.EmailConfirmationRequestDTO;
 import com.evomanex.AppRH.domain.user.EmailResendRequestDTO;
-import com.evomanex.AppRH.domain.user.LoginResponseDTO;
 import com.evomanex.AppRH.domain.user.MessageResponseDTO;
+import com.evomanex.AppRH.domain.user.OAuthCodeExchangeResponseDTO;
 import com.evomanex.AppRH.domain.user.RegisterDTO;
 import com.evomanex.AppRH.domain.user.RegisterResponseDTO;
 import com.evomanex.AppRH.domain.user.User;
-
-import com.evomanex.AppRH.infra.security.TokenService;
-
+import com.evomanex.AppRH.service.AuthenticationCompletionService;
 import com.evomanex.AppRH.service.EmailVerificationService;
 import com.evomanex.AppRH.service.PublicRegistrationService;
-
 import io.swagger.v3.oas.annotations.Operation;
-
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
-
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
-
 import io.swagger.v3.oas.annotations.security.SecurityRequirements;
-
 import io.swagger.v3.oas.annotations.tags.Tag;
-
 import jakarta.validation.Valid;
-
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -51,10 +41,10 @@ import java.util.Locale;
 @SecurityRequirements
 public class AuthenticationController {
 
-    private final AuthenticationManager
-            authenticationManager;
+    private final AuthenticationManager authenticationManager;
 
-    private final TokenService tokenService;
+    private final AuthenticationCompletionService
+            authenticationCompletionService;
 
     private final PublicRegistrationService
             publicRegistrationService;
@@ -64,15 +54,15 @@ public class AuthenticationController {
 
     public AuthenticationController(
             AuthenticationManager authenticationManager,
-            TokenService tokenService,
+            AuthenticationCompletionService authenticationCompletionService,
             PublicRegistrationService publicRegistrationService,
             EmailVerificationService emailVerificationService
     ) {
         this.authenticationManager =
                 authenticationManager;
 
-        this.tokenService =
-                tokenService;
+        this.authenticationCompletionService =
+                authenticationCompletionService;
 
         this.publicRegistrationService =
                 publicRegistrationService;
@@ -84,18 +74,25 @@ public class AuthenticationController {
     @PostMapping("/login")
     @Operation(
             summary = "Autenticar usuário",
-            description =
-                    "Valida login e senha e retorna um token JWT"
+            description = """
+                    Valida login e senha.
+
+                    Se o MFA estiver desabilitado, retorna o token JWT.
+
+                    Se o MFA estiver habilitado, retorna um desafio MFA
+                    sem emitir o token JWT definitivo.
+                    """
     )
     @ApiResponses({
             @ApiResponse(
                     responseCode = "200",
-                    description = "Autenticação realizada",
+                    description =
+                            "Credenciais válidas. Retorna JWT ou desafio MFA.",
                     content = @Content(
                             mediaType = "application/json",
                             schema = @Schema(
                                     implementation =
-                                            LoginResponseDTO.class
+                                            OAuthCodeExchangeResponseDTO.class
                             )
                     )
             ),
@@ -106,7 +103,7 @@ public class AuthenticationController {
                     content = @Content
             )
     })
-    public ResponseEntity<LoginResponseDTO> login(
+    public ResponseEntity<OAuthCodeExchangeResponseDTO> login(
             @Valid
             @RequestBody
             AuthenticationDTO request
@@ -119,30 +116,30 @@ public class AuthenticationController {
                                 Locale.ROOT
                         );
 
-        var authenticationToken =
+        UsernamePasswordAuthenticationToken
+                authenticationToken =
                 new UsernamePasswordAuthenticationToken(
                         normalizedLogin,
                         request.password()
                 );
 
-        var authentication =
+        Authentication authentication =
                 authenticationManager.authenticate(
                         authenticationToken
                 );
 
-        User authenticatedUser =
-                (User) authentication.getPrincipal();
+        Object principal =
+                authentication.getPrincipal();
 
-        String accessToken =
-                tokenService.generateToken(
+        if (!(principal instanceof User authenticatedUser)) {
+            throw new IllegalStateException(
+                    "O usuário autenticado é inválido."
+            );
+        }
+
+        OAuthCodeExchangeResponseDTO response =
+                authenticationCompletionService.complete(
                         authenticatedUser
-                );
-
-        LoginResponseDTO response =
-                new LoginResponseDTO(
-                        accessToken,
-                        "Bearer",
-                        TokenService.EXPIRATION_SECONDS
                 );
 
         return ResponseEntity.ok(
@@ -274,10 +271,9 @@ public class AuthenticationController {
             @RequestBody
             EmailResendRequestDTO request
     ) {
-        emailVerificationService
-                .resendVerification(
-                        request.login()
-                );
+        emailVerificationService.resendVerification(
+                request.login()
+        );
 
         return ResponseEntity.ok(
                 new MessageResponseDTO(

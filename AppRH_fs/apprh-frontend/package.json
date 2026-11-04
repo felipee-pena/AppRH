@@ -8,15 +8,19 @@
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "test": "vitest run",
-    "test:watch": "vitest",
-    "test:coverage": "vitest run --coverage"
+    "test": "vitest run --pool=threads --maxWorkers=2",
+    "test:watch": "vitest --pool=threads --maxWorkers=2",
+    "test:coverage": "vitest run --coverage --pool=threads --maxWorkers=2",
+    "test:mfa": "vitest run src/test/hooks/useMfaVerification.test.tsx src/test/pages/mfa-verify/MfaVerifyPage.test.tsx --pool=threads --maxWorkers=1",
+    "test:oauth": "vitest run src/test/hooks/useOAuthCallback.test.tsx src/test/pages/oauth-callback/OAuthCallbackPage.test.tsx --pool=threads --maxWorkers=1"
   },
   "dependencies": {
     "@tanstack/react-query": "^5.104.2",
     "axios": "^1.20.0",
+    "qrcode.react": "^4.2.0",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
+    "react-icons": "^5.7.0",
     "react-router-dom": "^7.18.4"
   },
   "devDependencies": {

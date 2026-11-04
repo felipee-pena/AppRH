@@ -23,10 +23,30 @@
 
 	<properties>
 		<java.version>22</java.version>
+
 		<jacoco.version>0.8.16</jacoco.version>
+
 		<skip.integration.tests>true</skip.integration.tests>
-		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+
+		<project.build.sourceEncoding>
+			UTF-8
+		</project.build.sourceEncoding>
+
+		<project.reporting.outputEncoding>
+			UTF-8
+		</project.reporting.outputEncoding>
+
+		<sonar.coverage.jacoco.xmlReportPaths>
+			${project.basedir}/target/site/jacoco/jacoco.xml
+		</sonar.coverage.jacoco.xmlReportPaths>
+
+		<sonar.junit.reportPaths>
+			${project.basedir}/target/surefire-reports
+		</sonar.junit.reportPaths>
+
+		<sonar.cpd.exclusions>
+			**/src/main/resources/db/migration/**
+		</sonar.cpd.exclusions>
 	</properties>
 
 	<dependencies>
@@ -41,6 +61,12 @@
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-data-jpa</artifactId>
+		</dependency>
+
+		<!-- Actuator -->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-actuator</artifactId>
 		</dependency>
 
 		<!-- Segurança -->
@@ -145,6 +171,25 @@
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-flyway-test</artifactId>
 			<scope>test</scope>
+		</dependency>
+
+		<!-- OAuth -->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-oauth2-client</artifactId>
+		</dependency>
+
+		<!-- QR Code Google ZXing -->
+		<dependency>
+			<groupId>com.google.zxing</groupId>
+			<artifactId>core</artifactId>
+			<version>3.5.3</version>
+		</dependency>
+
+		<dependency>
+			<groupId>com.google.zxing</groupId>
+			<artifactId>javase</artifactId>
+			<version>3.5.3</version>
 		</dependency>
 
 		<!-- Spring Security Test -->

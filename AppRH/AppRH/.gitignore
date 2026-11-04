@@ -4,6 +4,47 @@ target/
 !**/src/main/**/target/
 !**/src/test/**/target/
 
+# Frontend dependencies
+**/node_modules/
+
+# Frontend generated outputs
+**/coverage/
+**/dist/
+**/.vite/
+**/.vitest/
+**/.cache/
+
+# Test reports
+**/test-results/
+**/playwright-report/
+**/junit.xml
+**/coverage-final.json
+**/lcov.info
+
+# Backend generated outputs
+**/target/
+**/build/
+**/out/
+
+# IDE and operating system
+.idea/
+.vscode/
+*.iml
+.DS_Store
+Thumbs.db
+
+# Environment files and secrets
+.env
+.env.*
+!.env.example
+**/application-local.yml
+**/application-local.yaml
+**/application-local.properties
+
+# Logs
+*.log
+logs/
+
 ### STS ###
 .apt_generated
 .classpath
