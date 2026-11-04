@@ -2,7 +2,8 @@ import {
   defineConfig,
 } from "vitest/config";
 
-import react from "@vitejs/plugin-react";
+import react from
+  "@vitejs/plugin-react";
 
 export default defineConfig({
   plugins: [
@@ -10,26 +11,53 @@ export default defineConfig({
   ],
 
   server: {
-    port: 5173,
-    strictPort: true,
+    port:
+      5173,
+
+    strictPort:
+      true,
 
     proxy: {
       "/api": {
-        target: "http://localhost:8081",
-        changeOrigin: true,
+        target:
+          "http://localhost:8081",
+
+        changeOrigin:
+          true,
       },
 
       "/auth": {
-        target: "http://localhost:8081",
-        changeOrigin: true,
+        target:
+          "http://localhost:8081",
+
+        changeOrigin:
+          true,
+      },
+
+      "/oauth2": {
+        target:
+          "http://localhost:8081",
+
+        changeOrigin:
+          true,
+      },
+
+      "/login/oauth2": {
+        target:
+          "http://localhost:8081",
+
+        changeOrigin:
+          true,
       },
     },
   },
 
   test: {
-    environment: "jsdom",
+    environment:
+      "jsdom",
 
-    globals: true,
+    globals:
+      true,
 
     setupFiles: [
       "./src/test/setup.ts",
@@ -40,8 +68,27 @@ export default defineConfig({
       "src/test/**/*.test.tsx",
     ],
 
+    pool:
+      "threads",
+
+    maxWorkers:
+      2,
+
+    isolate:
+      true,
+
+    testTimeout:
+      10000,
+
+    hookTimeout:
+      10000,
+
+    teardownTimeout:
+      10000,
+
     coverage: {
-      provider: "v8",
+      provider:
+        "v8",
 
       reporter: [
         "text",
@@ -50,7 +97,8 @@ export default defineConfig({
         "lcov",
       ],
 
-      reportsDirectory: "./coverage",
+      reportsDirectory:
+        "./coverage",
 
       include: [
         "src/components/**/*.tsx",
@@ -72,11 +120,18 @@ export default defineConfig({
       ],
 
       thresholds: {
-              statements: 30,
-              branches: 35,
-              functions: 33,
-              lines: 30,
-            },
+        statements:
+          30,
+
+        branches:
+          35,
+
+        functions:
+          33,
+
+        lines:
+          30,
+      },
     },
   },
 });

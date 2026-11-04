@@ -98,7 +98,16 @@ public class SecurityConfigurations {
                 )
                 .csrf(
                         csrf ->
-                                csrf.disable()
+                                csrf.ignoringRequestMatchers(
+                                        "/auth/login",
+                                        "/auth/register",
+                                        "/auth/email/confirm",
+                                        "/auth/email/resend",
+                                        "/auth/oauth/exchange",
+                                        "/auth/mfa/verify",
+                                        "/api/companies",
+                                        "/api/companies/**"
+                                )
                 )
                 .httpBasic(
                         httpBasic ->
@@ -115,7 +124,7 @@ public class SecurityConfigurations {
                 .sessionManagement(
                         session ->
                                 session.sessionCreationPolicy(
-                                        SessionCreationPolicy.IF_REQUIRED
+                                        SessionCreationPolicy.STATELESS
                                 )
                 )
                 .authorizeHttpRequests(
@@ -163,7 +172,9 @@ public class SecurityConfigurations {
                 )
                 .csrf(
                         csrf ->
-                                csrf.disable()
+                                csrf.ignoringRequestMatchers(
+                                        "/api/**"
+                                )
                 )
                 .httpBasic(
                         httpBasic ->

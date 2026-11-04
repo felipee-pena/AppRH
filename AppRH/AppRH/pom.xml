@@ -23,10 +23,32 @@
 
 	<properties>
 		<java.version>22</java.version>
+
 		<jacoco.version>0.8.14</jacoco.version>
-		<skip.integration.tests>true</skip.integration.tests>
-		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+
+		<skip.integration.tests>
+			true
+		</skip.integration.tests>
+
+		<project.build.sourceEncoding>
+			UTF-8
+		</project.build.sourceEncoding>
+
+		<project.reporting.outputEncoding>
+			UTF-8
+		</project.reporting.outputEncoding>
+
+		<sonar.coverage.jacoco.xmlReportPaths>
+			${project.basedir}/target/site/jacoco/jacoco.xml
+		</sonar.coverage.jacoco.xmlReportPaths>
+
+		<sonar.junit.reportPaths>
+			${project.basedir}/target/surefire-reports
+		</sonar.junit.reportPaths>
+
+		<sonar.cpd.exclusions>
+			**/src/main/resources/db/migration/**
+		</sonar.cpd.exclusions>
 	</properties>
 
 	<dependencies>

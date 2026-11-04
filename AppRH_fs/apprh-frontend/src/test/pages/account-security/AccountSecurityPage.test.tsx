@@ -1,7 +1,6 @@
 import {
   render,
   screen,
-  waitFor,
 } from "@testing-library/react";
 
 import userEvent from "@testing-library/user-event";
@@ -21,6 +20,10 @@ import {
 import {
   useMfaManagement,
 } from "../../../hooks/useMfaManagement";
+
+import type {
+  MfaSetupResponse,
+} from "../../../interfaces/MfaSetupResponse";
 
 vi.mock(
   "../../../hooks/useMfaManagement"
@@ -51,6 +54,30 @@ type MfaManagementResult =
   ReturnType<
     typeof useMfaManagement
   >;
+
+interface SetupMutationOptions {
+  onSuccess?: (
+    response: MfaSetupResponse
+  ) => void;
+
+  onError?: (
+    error: Error
+  ) => void;
+}
+
+const setupResponse:
+  MfaSetupResponse = {
+    secret:
+      "BASE32SECRET",
+
+    otpauth_uri:
+      "otpauth://totp/AppRH",
+
+    recovery_codes: [
+      "RECOVERY01",
+      "RECOVERY02",
+    ],
+  };
 
 function createMutationMock(
   overrides: Record<
@@ -275,6 +302,19 @@ function createHookResult(
   ) as MfaManagementResult;
 }
 
+function createSuccessfulSetupMutate() {
+  return vi.fn(
+    (
+      _variables: undefined,
+      options?: SetupMutationOptions
+    ) => {
+      options?.onSuccess?.(
+        setupResponse
+      );
+    }
+  );
+}
+
 describe(
   "AccountSecurityPage",
   () => {
@@ -399,38 +439,38 @@ describe(
 
         expect(
           mutate
-        ).toHaveBeenCalledOnce();
+        ).toHaveBeenCalledWith(
+          undefined,
+          expect.objectContaining({
+            onSuccess:
+              expect.any(
+                Function
+              ),
+
+            onError:
+              expect.any(
+                Function
+              ),
+          })
+        );
       }
     );
 
     it(
-      "shows QR Code, secret and recovery codes",
+      "shows QR Code, secret and recovery codes after setup",
       async () => {
+        const user =
+          userEvent.setup();
+
+        const setupMutate =
+          createSuccessfulSetupMutate();
+
         mockedUseMfaManagement
           .mockReturnValue(
             createHookResult({
               setupOverrides: {
-                isSuccess:
-                  true,
-
-                isIdle:
-                  false,
-
-                status:
-                  "success",
-
-                data: {
-                  secret:
-                    "BASE32SECRET",
-
-                  otpauth_uri:
-                    "otpauth://totp/AppRH",
-
-                  recovery_codes: [
-                    "RECOVERY01",
-                    "RECOVERY02",
-                  ],
-                },
+                mutate:
+                  setupMutate,
               },
             })
           );
@@ -439,18 +479,18 @@ describe(
           <AccountSecurityPage />
         );
 
-        await waitFor(
-          () => {
-            expect(
-              screen.getByTestId(
-                "qr-code"
-              )
-            ).toBeInTheDocument();
-          }
+        await user.click(
+          screen.getByRole(
+            "button",
+            {
+              name:
+                "Habilitar MFA",
+            }
+          )
         );
 
         expect(
-          screen.getByTestId(
+          await screen.findByTestId(
             "qr-code"
           )
         ).toHaveAttribute(
@@ -475,6 +515,23 @@ describe(
             "RECOVERY02"
           )
         ).toBeInTheDocument();
+
+        expect(
+          setupMutate
+        ).toHaveBeenCalledWith(
+          undefined,
+          expect.objectContaining({
+            onSuccess:
+              expect.any(
+                Function
+              ),
+
+            onError:
+              expect.any(
+                Function
+              ),
+          })
+        );
       }
     );
 
@@ -484,41 +541,39 @@ describe(
         const user =
           userEvent.setup();
 
-        const mutate =
+        const setupMutate =
+          createSuccessfulSetupMutate();
+
+        const confirmMutate =
           vi.fn();
 
         mockedUseMfaManagement
           .mockReturnValue(
             createHookResult({
               setupOverrides: {
-                isSuccess:
-                  true,
-
-                isIdle:
-                  false,
-
-                status:
-                  "success",
-
-                data: {
-                  secret:
-                    "BASE32SECRET",
-
-                  otpauth_uri:
-                    "otpauth://totp/AppRH",
-
-                  recovery_codes: [],
-                },
+                mutate:
+                  setupMutate,
               },
 
               confirmOverrides: {
-                mutate,
+                mutate:
+                  confirmMutate,
               },
             })
           );
 
         render(
           <AccountSecurityPage />
+        );
+
+        await user.click(
+          screen.getByRole(
+            "button",
+            {
+              name:
+                "Habilitar MFA",
+            }
+          )
         );
 
         const codeInput =
@@ -542,11 +597,16 @@ describe(
         );
 
         expect(
-          mutate
+          confirmMutate
         ).toHaveBeenCalledWith(
           "123456",
           expect.objectContaining({
             onSuccess:
+              expect.any(
+                Function
+              ),
+
+            onError:
               expect.any(
                 Function
               ),
@@ -561,41 +621,39 @@ describe(
         const user =
           userEvent.setup();
 
-        const mutate =
+        const setupMutate =
+          createSuccessfulSetupMutate();
+
+        const confirmMutate =
           vi.fn();
 
         mockedUseMfaManagement
           .mockReturnValue(
             createHookResult({
               setupOverrides: {
-                isSuccess:
-                  true,
-
-                isIdle:
-                  false,
-
-                status:
-                  "success",
-
-                data: {
-                  secret:
-                    "BASE32SECRET",
-
-                  otpauth_uri:
-                    "otpauth://totp/AppRH",
-
-                  recovery_codes: [],
-                },
+                mutate:
+                  setupMutate,
               },
 
               confirmOverrides: {
-                mutate,
+                mutate:
+                  confirmMutate,
               },
             })
           );
 
         render(
           <AccountSecurityPage />
+        );
+
+        await user.click(
+          screen.getByRole(
+            "button",
+            {
+              name:
+                "Habilitar MFA",
+            }
+          )
         );
 
         const codeInput =
@@ -619,7 +677,7 @@ describe(
         ).toBeDisabled();
 
         expect(
-          mutate
+          confirmMutate
         ).not.toHaveBeenCalled();
       }
     );
@@ -710,7 +768,99 @@ describe(
 
         expect(
           mutate
-        ).toHaveBeenCalledOnce();
+        ).toHaveBeenCalledWith(
+          undefined,
+          expect.objectContaining({
+            onSuccess:
+              expect.any(
+                Function
+              ),
+
+            onError:
+              expect.any(
+                Function
+              ),
+          })
+        );
+      }
+    );
+
+    it(
+      "shows regenerated recovery codes",
+      async () => {
+        const user =
+          userEvent.setup();
+
+        const regeneratedCodes = {
+          recovery_codes: [
+            "NEWRECOVERY01",
+            "NEWRECOVERY02",
+          ],
+        };
+
+        const regenerateMutate =
+          vi.fn(
+            (
+              _variables: undefined,
+              options?: {
+                onSuccess?: (
+                  response:
+                    typeof regeneratedCodes
+                ) => void;
+              }
+            ) => {
+              options?.onSuccess?.(
+                regeneratedCodes
+              );
+            }
+          );
+
+        mockedUseMfaManagement
+          .mockReturnValue(
+            createHookResult({
+              mfaEnabled:
+                true,
+
+              regenerateOverrides: {
+                mutate:
+                  regenerateMutate,
+              },
+            })
+          );
+
+        render(
+          <AccountSecurityPage />
+        );
+
+        await user.click(
+          screen.getByRole(
+            "button",
+            {
+              name:
+                "Regenerar códigos",
+            }
+          )
+        );
+
+        expect(
+          await screen.findByText(
+            "NEWRECOVERY01"
+          )
+        ).toBeInTheDocument();
+
+        expect(
+          screen.getByText(
+            "NEWRECOVERY02"
+          )
+        ).toBeInTheDocument();
+
+        expect(
+          screen.getByRole(
+            "status"
+          )
+        ).toHaveTextContent(
+          "Novos códigos de recuperação foram gerados."
+        );
       }
     );
 
@@ -812,6 +962,11 @@ describe(
           },
           expect.objectContaining({
             onSuccess:
+              expect.any(
+                Function
+              ),
+
+            onError:
               expect.any(
                 Function
               ),

@@ -4,12 +4,12 @@ import {
   useState,
 } from "react";
 
+import axios from "axios";
+
 import {
   useNavigate,
   useSearchParams,
 } from "react-router-dom";
-
-import axios from "axios";
 
 import {
   useOAuthCallback,
@@ -61,32 +61,40 @@ export function OAuthCallbackPage() {
   const processed =
     useRef(false);
 
+  const code =
+    searchParameters.get(
+      "code"
+    );
+
   const [
-    errorMessage,
-    setErrorMessage,
+    requestErrorMessage,
+    setRequestErrorMessage,
   ] =
     useState("");
 
+  const missingCodeMessage =
+    code
+      ? ""
+      : "O código OAuth não foi informado.";
+
+  const errorMessage =
+    requestErrorMessage
+    || missingCodeMessage;
+
+  const mutateOAuth =
+    oauthCallback.mutate;
+
   useEffect(
     () => {
-      if (processed.current) {
+      if (
+        processed.current
+        || !code
+      ) {
         return;
       }
 
-      processed.current = true;
-
-      const code =
-        searchParameters.get(
-          "code"
-        );
-
-      if (!code) {
-        setErrorMessage(
-          "O código OAuth não foi informado."
-        );
-
-        return;
-      }
+      processed.current =
+        true;
 
       window.history.replaceState(
         {},
@@ -94,13 +102,14 @@ export function OAuthCallbackPage() {
         "/oauth/callback"
       );
 
-      oauthCallback.mutate(
+      mutateOAuth(
         code,
         {
           onSuccess:
             response => {
               if (
                 response.mfa_required
+                && response.challenge_token
               ) {
                 navigate(
                   "/mfa/verify",
@@ -122,7 +131,7 @@ export function OAuthCallbackPage() {
 
           onError:
             error => {
-              setErrorMessage(
+              setRequestErrorMessage(
                 extractErrorMessage(
                   error
                 )
@@ -132,9 +141,9 @@ export function OAuthCallbackPage() {
       );
     },
     [
+      code,
+      mutateOAuth,
       navigate,
-      oauthCallback,
-      searchParameters,
     ]
   );
 

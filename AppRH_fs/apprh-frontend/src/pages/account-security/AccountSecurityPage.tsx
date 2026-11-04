@@ -1,14 +1,13 @@
 import {
-  useEffect,
   useState,
   type FormEvent,
 } from "react";
 
+import axios from "axios";
+
 import {
   QRCodeSVG,
 } from "qrcode.react";
-
-import axios from "axios";
 
 import {
   RecoveryCodes,
@@ -73,82 +72,43 @@ export function AccountSecurityPage() {
   const [
     confirmationCode,
     setConfirmationCode,
-  ] = useState("");
+  ] =
+    useState("");
 
   const [
     password,
     setPassword,
-  ] = useState("");
+  ] =
+    useState("");
 
   const [
     disableCode,
     setDisableCode,
-  ] = useState("");
+  ] =
+    useState("");
 
   const [
     recoveryCodes,
     setRecoveryCodes,
-  ] = useState<string[]>([]);
+  ] =
+    useState<string[]>([]);
 
   const [
     successMessage,
     setSuccessMessage,
-  ] = useState("");
+  ] =
+    useState("");
 
   const [
     localError,
     setLocalError,
-  ] = useState("");
+  ] =
+    useState("");
 
   const mfaEnabled =
     statusQuery.data
       ?.mfa_enabled
     ?? false;
-
-  useEffect(
-    () => {
-      if (
-        setupMutation.isSuccess
-        && setupMutation.data
-      ) {
-        setSetupConfiguration(
-          setupMutation.data
-        );
-
-        setRecoveryCodes(
-          setupMutation.data
-            .recovery_codes
-        );
-      }
-    },
-    [
-      setupMutation.isSuccess,
-      setupMutation.data,
-    ]
-  );
-
-  useEffect(
-    () => {
-      if (
-        regenerateMutation.isSuccess
-        && regenerateMutation.data
-      ) {
-        setRecoveryCodes(
-          regenerateMutation.data
-            .recovery_codes
-        );
-
-        setSuccessMessage(
-          "Novos códigos de recuperação "
-          + "foram gerados."
-        );
-      }
-    },
-    [
-      regenerateMutation.isSuccess,
-      regenerateMutation.data,
-    ]
-  );
 
   const currentError =
     localError
@@ -194,12 +154,39 @@ export function AccountSecurityPage() {
     || regenerateMutation.isPending
     || disableMutation.isPending;
 
-  function handleBeginSetup() {
+  function clearMessages() {
     setLocalError("");
     setSuccessMessage("");
+  }
+
+  function handleBeginSetup() {
+    clearMessages();
     setRecoveryCodes([]);
 
-    setupMutation.mutate();
+    setupMutation.mutate(
+      undefined,
+      {
+        onSuccess:
+          response => {
+            setSetupConfiguration(
+              response
+            );
+
+            setRecoveryCodes(
+              response.recovery_codes
+            );
+          },
+
+        onError:
+          error => {
+            setLocalError(
+              extractErrorMessage(
+                error
+              )
+            );
+          },
+      }
+    );
   }
 
   function handleConfirmSetup(
@@ -207,8 +194,7 @@ export function AccountSecurityPage() {
   ) {
     event.preventDefault();
 
-    setLocalError("");
-    setSuccessMessage("");
+    clearMessages();
 
     const normalizedCode =
       confirmationCode
@@ -249,16 +235,50 @@ export function AccountSecurityPage() {
             setConfirmationCode(
               ""
             );
+
+            setRecoveryCodes([]);
+          },
+
+        onError:
+          error => {
+            setLocalError(
+              extractErrorMessage(
+                error
+              )
+            );
           },
       }
     );
   }
 
   function handleRegenerateCodes() {
-    setLocalError("");
-    setSuccessMessage("");
+    clearMessages();
 
-    regenerateMutation.mutate();
+    regenerateMutation.mutate(
+      undefined,
+      {
+        onSuccess:
+          response => {
+            setRecoveryCodes(
+              response.recovery_codes
+            );
+
+            setSuccessMessage(
+              "Novos códigos de recuperação "
+              + "foram gerados."
+            );
+          },
+
+        onError:
+          error => {
+            setLocalError(
+              extractErrorMessage(
+                error
+              )
+            );
+          },
+      }
+    );
   }
 
   function handleDisableMfa(
@@ -266,10 +286,23 @@ export function AccountSecurityPage() {
   ) {
     event.preventDefault();
 
-    setLocalError("");
-    setSuccessMessage("");
+    clearMessages();
 
-    if (!password.trim()) {
+    const normalizedPassword =
+      password.trim();
+
+    const normalizedCode =
+      disableCode
+        .replace(
+          /\D/g,
+          ""
+        )
+        .slice(
+          0,
+          6
+        );
+
+    if (!normalizedPassword) {
       setLocalError(
         "Informe a senha atual."
       );
@@ -279,7 +312,7 @@ export function AccountSecurityPage() {
 
     if (
       !/^\d{6}$/.test(
-        disableCode
+        normalizedCode
       )
     ) {
       setLocalError(
@@ -293,7 +326,7 @@ export function AccountSecurityPage() {
       {
         password,
         code:
-          disableCode,
+          normalizedCode,
       },
       {
         onSuccess:
@@ -305,8 +338,18 @@ export function AccountSecurityPage() {
             setPassword("");
             setDisableCode("");
             setRecoveryCodes([]);
+
             setSetupConfiguration(
               null
+            );
+          },
+
+        onError:
+          error => {
+            setLocalError(
+              extractErrorMessage(
+                error
+              )
             );
           },
       }
@@ -346,7 +389,10 @@ export function AccountSecurityPage() {
 
         {successMessage && (
           <div
-            className="account-security-message account-security-message--success"
+            className={
+              "account-security-message "
+              + "account-security-message--success"
+            }
             role="status"
           >
             {successMessage}
@@ -355,7 +401,10 @@ export function AccountSecurityPage() {
 
         {currentError && (
           <div
-            className="account-security-message account-security-message--error"
+            className={
+              "account-security-message "
+              + "account-security-message--error"
+            }
             role="alert"
           >
             {currentError}
@@ -378,8 +427,10 @@ export function AccountSecurityPage() {
           <span
             className={
               mfaEnabled
-                ? "account-security-badge account-security-badge--enabled"
-                : "account-security-badge account-security-badge--disabled"
+                ? "account-security-badge "
+                  + "account-security-badge--enabled"
+                : "account-security-badge "
+                  + "account-security-badge--disabled"
             }
           >
             {mfaEnabled
@@ -446,6 +497,7 @@ export function AccountSecurityPage() {
               onSubmit={
                 handleConfirmSetup
               }
+              noValidate
             >
               <label htmlFor="mfa-confirmation-code">
                 Código atual do autenticador
@@ -453,6 +505,7 @@ export function AccountSecurityPage() {
 
               <input
                 id="mfa-confirmation-code"
+                name="mfa-confirmation-code"
                 inputMode="numeric"
                 autoComplete="one-time-code"
                 placeholder="000000"
@@ -529,7 +582,12 @@ export function AccountSecurityPage() {
               </button>
             </section>
 
-            <section className="account-security-section account-security-danger-zone">
+            <section
+              className={
+                "account-security-section "
+                + "account-security-danger-zone"
+              }
+            >
               <h2>
                 Desabilitar MFA
               </h2>
@@ -545,6 +603,7 @@ export function AccountSecurityPage() {
                 onSubmit={
                   handleDisableMfa
                 }
+                noValidate
               >
                 <label htmlFor="mfa-disable-password">
                   Senha atual
@@ -552,6 +611,7 @@ export function AccountSecurityPage() {
 
                 <input
                   id="mfa-disable-password"
+                  name="mfa-disable-password"
                   type="password"
                   autoComplete="current-password"
                   value={password}
@@ -573,6 +633,7 @@ export function AccountSecurityPage() {
 
                 <input
                   id="mfa-disable-code"
+                  name="mfa-disable-code"
                   inputMode="numeric"
                   autoComplete="one-time-code"
                   placeholder="000000"

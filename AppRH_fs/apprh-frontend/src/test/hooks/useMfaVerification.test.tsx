@@ -38,20 +38,26 @@ const mockedUseAuth =
     useAuth
   );
 
+const completeMfa =
+  vi.fn();
+
 function createWrapper() {
   const queryClient =
     new QueryClient({
       defaultOptions: {
         queries: {
-          retry: false,
+          retry:
+            false,
         },
+
         mutations: {
-          retry: false,
+          retry:
+            false,
         },
       },
     });
 
-  return function Wrapper({
+  function Wrapper({
     children,
   }: {
     children: ReactNode;
@@ -63,48 +69,67 @@ function createWrapper() {
         {children}
       </QueryClientProvider>
     );
-  };
+  }
+
+  return Wrapper;
+}
+
+function configureAuthContext() {
+  mockedUseAuth.mockReturnValue({
+    user:
+      null,
+
+    isAuthenticated:
+      false,
+
+    isInitializing:
+      false,
+
+    login:
+      vi.fn(),
+
+    completeMfa,
+
+    processAuthenticationResponse:
+      vi.fn(),
+
+    logout:
+      vi.fn(),
+
+    hasRole:
+      vi.fn(
+        () => false
+      ),
+  });
 }
 
 describe(
   "useMfaVerification",
   () => {
-    const completeMfa =
-      vi.fn();
-
     beforeEach(
       () => {
         vi.clearAllMocks();
 
-        mockedUseAuth.mockReturnValue({
-          user: null,
-          isAuthenticated: false,
-          isInitializing: false,
-          login: vi.fn(),
-          completeMfa,
-          processAuthenticationResponse:
-            vi.fn(),
-          logout: vi.fn(),
-          hasRole: vi.fn(
-            () => false
-          ),
-        });
+        configureAuthContext();
       }
     );
 
     it(
-      "validates MFA code",
+      "validates a six-digit MFA code",
       async () => {
-        completeMfa
-          .mockResolvedValue({
-            mfa_required: false,
-            access_token:
-              "jwt-final",
-            token_type:
-              "Bearer",
-            expires_in:
-              7200,
-          });
+        completeMfa.mockResolvedValue({
+          mfa_required:
+            false,
+
+          access_token:
+            "jwt-final",
+
+          token_type:
+            "Bearer",
+
+          expires_in:
+            7200,
+        });
 
         const {
           result,
@@ -136,25 +161,48 @@ describe(
 
         expect(
           completeMfa
+        ).toHaveBeenCalledOnce();
+
+        expect(
+          completeMfa
         ).toHaveBeenCalledWith(
           "123456"
         );
+
+        expect(
+          result.current.data
+        ).toEqual({
+          mfa_required:
+            false,
+
+          access_token:
+            "jwt-final",
+
+          token_type:
+            "Bearer",
+
+          expires_in:
+            7200,
+        });
       }
     );
 
     it(
-      "removes non-numeric characters",
+      "removes separators from MFA code",
       async () => {
-        completeMfa
-          .mockResolvedValue({
-            mfa_required: false,
-            access_token:
-              "jwt-final",
-            token_type:
-              "Bearer",
-            expires_in:
-              7200,
-          });
+        completeMfa.mockResolvedValue({
+          mfa_required:
+            false,
+
+          access_token:
+            "jwt-final",
+
+          token_type:
+            "Bearer",
+
+          expires_in:
+            7200,
+        });
 
         const {
           result,
@@ -193,7 +241,60 @@ describe(
     );
 
     it(
-      "rejects invalid MFA code",
+      "removes spaces from MFA code",
+      async () => {
+        completeMfa.mockResolvedValue({
+          mfa_required:
+            false,
+
+          access_token:
+            "jwt-final",
+
+          token_type:
+            "Bearer",
+
+          expires_in:
+            7200,
+        });
+
+        const {
+          result,
+        } =
+          renderHook(
+            () =>
+              useMfaVerification(),
+            {
+              wrapper:
+                createWrapper(),
+            }
+          );
+
+        act(
+          () => {
+            result.current.mutate(
+              "123 456"
+            );
+          }
+        );
+
+        await waitFor(
+          () => {
+            expect(
+              result.current.isSuccess
+            ).toBe(true);
+          }
+        );
+
+        expect(
+          completeMfa
+        ).toHaveBeenCalledWith(
+          "123456"
+        );
+      }
+    );
+
+    it(
+      "rejects a code shorter than six digits",
       async () => {
         const {
           result,
@@ -224,7 +325,8 @@ describe(
         );
 
         expect(
-          result.current.error?.message
+          result.current.error
+            ?.message
         ).toBe(
           "O código MFA deve possuir 6 dígitos."
         );
@@ -232,6 +334,89 @@ describe(
         expect(
           completeMfa
         ).not.toHaveBeenCalled();
+      }
+    );
+
+    it(
+      "rejects an empty code",
+      async () => {
+        const {
+          result,
+        } =
+          renderHook(
+            () =>
+              useMfaVerification(),
+            {
+              wrapper:
+                createWrapper(),
+            }
+          );
+
+        act(
+          () => {
+            result.current.mutate(
+              ""
+            );
+          }
+        );
+
+        await waitFor(
+          () => {
+            expect(
+              result.current.isError
+            ).toBe(true);
+          }
+        );
+
+        expect(
+          completeMfa
+        ).not.toHaveBeenCalled();
+      }
+    );
+
+    it(
+      "exposes backend validation error",
+      async () => {
+        completeMfa.mockRejectedValue(
+          new Error(
+            "Código MFA inválido."
+          )
+        );
+
+        const {
+          result,
+        } =
+          renderHook(
+            () =>
+              useMfaVerification(),
+            {
+              wrapper:
+                createWrapper(),
+            }
+          );
+
+        act(
+          () => {
+            result.current.mutate(
+              "999999"
+            );
+          }
+        );
+
+        await waitFor(
+          () => {
+            expect(
+              result.current.isError
+            ).toBe(true);
+          }
+        );
+
+        expect(
+          result.current.error
+            ?.message
+        ).toBe(
+          "Código MFA inválido."
+        );
       }
     );
   }

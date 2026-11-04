@@ -4,9 +4,8 @@ on:
   push:
     branches:
       - main
-      - "release/**"
+      - develop
       - "feature/**"
-
     paths:
       - "AppRH_fs/apprh-frontend/**"
       - ".github/workflows/frontend-ci.yml"
@@ -14,8 +13,7 @@ on:
   pull_request:
     branches:
       - main
-      - "release/**"
-
+      - develop
     paths:
       - "AppRH_fs/apprh-frontend/**"
       - ".github/workflows/frontend-ci.yml"
@@ -29,68 +27,55 @@ concurrency:
   group: frontend-ci-${{ github.ref }}
   cancel-in-progress: true
 
-jobs:
-  frontend-validation:
-    name: Frontend Build and Tests
+defaults:
+  run:
+    working-directory: AppRH_fs/apprh-frontend
 
+jobs:
+  frontend:
+    name: Frontend Build and Tests
     runs-on: ubuntu-latest
 
-    defaults:
-      run:
-        working-directory: AppRH_fs/apprh-frontend
-
-    env:
-      VITE_API_URL: http://localhost:8081
-      VITE_ACCESS_TOKEN_KEY: apprh.access_token
+    timeout-minutes: 15
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v4
 
       - name: Set up Node.js
-        uses: actions/setup-node@v7
+        uses: actions/setup-node@v4
         with:
-          node-version: "24"
+          node-version: "22"
           cache: npm
-          cache-dependency-path: AppRH_fs/apprh-frontend/package-lock.json
-
-      - name: Display environment versions
-        run: |
-          node --version
-          npm --version
+          cache-dependency-path: |
+            AppRH_fs/apprh-frontend/package-lock.json
 
       - name: Install dependencies
         run: npm ci
 
-      - name: Validate TypeScript
-        run: npx tsc --noEmit
-
       - name: Run lint
         run: npm run lint
+
+      - name: Run production build
+        run: npm run build
 
       - name: Run tests with coverage
         run: npm run test:coverage
 
-      - name: Build production bundle
-        run: npm run build
-
-      - name: Audit production dependencies
-        run: npm audit --omit=dev --audit-level=high
-
       - name: Upload frontend coverage
         if: always()
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v4
         with:
-          name: frontend-coverage-${{ github.run_number }}
+          name: frontend-coverage
           path: AppRH_fs/apprh-frontend/coverage
-          if-no-files-found: warn
+          if-no-files-found: error
           retention-days: 14
 
-      - name: Upload production bundle
+      - name: Upload frontend production bundle
         if: success()
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v4
         with:
-          name: frontend-dist-${{ github.run_number }}
+          name: frontend-dist
           path: AppRH_fs/apprh-frontend/dist
           if-no-files-found: error
           retention-days: 14

@@ -3,25 +3,25 @@ import {
   type FormEvent,
 } from "react";
 
+import axios from "axios";
+
 import {
   Navigate,
   useNavigate,
 } from "react-router-dom";
 
-import axios from "axios";
-
 import {
   useAuth,
 } from "../../hooks/useAuth";
+
+import type {
+  ApiErrorResponse,
+} from "../../interfaces/ApiErrorResponse";
 
 import {
   getMfaChallenge,
   removeMfaChallenge,
 } from "../../services/mfa-storage";
-
-import type {
-  ApiErrorResponse,
-} from "../../interfaces/ApiErrorResponse";
 
 import "./mfa-verify-page.css";
 
@@ -35,7 +35,8 @@ function extractErrorMessage(
   ) {
     return (
       error.response?.data?.message
-      ?? "Código MFA inválido."
+      ?? "Não foi possível validar "
+      + "o código MFA."
     );
   }
 
@@ -43,7 +44,10 @@ function extractErrorMessage(
     return error.message;
   }
 
-  return "Código MFA inválido.";
+  return (
+    "Não foi possível validar "
+    + "o código MFA."
+  );
 }
 
 export function MfaVerifyPage() {
@@ -56,13 +60,22 @@ export function MfaVerifyPage() {
   const challengeToken =
     getMfaChallenge();
 
-  const [code, setCode] =
+  const [
+    code,
+    setCode,
+  ] =
     useState("");
 
-  const [errorMessage, setErrorMessage] =
+  const [
+    errorMessage,
+    setErrorMessage,
+  ] =
     useState("");
 
-  const [isSubmitting, setIsSubmitting] =
+  const [
+    isSubmitting,
+    setIsSubmitting,
+  ] =
     useState(false);
 
   if (
@@ -91,9 +104,24 @@ export function MfaVerifyPage() {
   ) {
     event.preventDefault();
 
-    if (!/^\d{6}$/.test(code)) {
+    const normalizedCode =
+      code
+        .replace(
+          /\D/g,
+          ""
+        )
+        .slice(
+          0,
+          6
+        );
+
+    if (
+      !/^\d{6}$/.test(
+        normalizedCode
+      )
+    ) {
       setErrorMessage(
-        "Informe o código de 6 dígitos."
+        "O código MFA deve possuir 6 dígitos."
       );
 
       return;
@@ -104,7 +132,7 @@ export function MfaVerifyPage() {
       setErrorMessage("");
 
       await auth.completeMfa(
-        code
+        normalizedCode
       );
 
       navigate(
@@ -160,7 +188,10 @@ export function MfaVerifyPage() {
           </div>
         )}
 
-        <form onSubmit={handleSubmit}>
+        <form
+          onSubmit={handleSubmit}
+          noValidate
+        >
           <label htmlFor="mfa-code">
             Código de segurança
           </label>
@@ -178,8 +209,14 @@ export function MfaVerifyPage() {
               event => {
                 setCode(
                   event.target.value
-                    .replace(/\D/g, "")
-                    .slice(0, 6)
+                    .replace(
+                      /\D/g,
+                      ""
+                    )
+                    .slice(
+                      0,
+                      6
+                    )
                 );
 
                 setErrorMessage("");
@@ -203,8 +240,8 @@ export function MfaVerifyPage() {
         <button
           type="button"
           className="mfa-card__cancel"
-          onClick={handleCancel}
           disabled={isSubmitting}
+          onClick={handleCancel}
         >
           Cancelar e voltar ao login
         </button>

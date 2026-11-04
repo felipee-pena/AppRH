@@ -55,20 +55,26 @@ const mockedExchangeOAuthCode =
     exchangeOAuthCode
   );
 
+const processAuthenticationResponse =
+  vi.fn();
+
 function createWrapper() {
   const queryClient =
     new QueryClient({
       defaultOptions: {
         queries: {
-          retry: false,
+          retry:
+            false,
         },
+
         mutations: {
-          retry: false,
+          retry:
+            false,
         },
       },
     });
 
-  return function Wrapper({
+  function Wrapper({
     children,
   }: {
     children: ReactNode;
@@ -80,44 +86,61 @@ function createWrapper() {
         {children}
       </QueryClientProvider>
     );
-  };
+  }
+
+  return Wrapper;
 }
 
 describe(
   "useOAuthCallback",
   () => {
-    const processAuthenticationResponse =
-      vi.fn();
-
     beforeEach(
       () => {
         vi.clearAllMocks();
 
         mockedUseAuth.mockReturnValue({
-          user: null,
-          isAuthenticated: false,
-          isInitializing: false,
-          login: vi.fn(),
-          completeMfa: vi.fn(),
+          user:
+            null,
+
+          isAuthenticated:
+            false,
+
+          isInitializing:
+            false,
+
+          login:
+            vi.fn(),
+
+          completeMfa:
+            vi.fn(),
+
           processAuthenticationResponse,
-          logout: vi.fn(),
-          hasRole: vi.fn(
-            () => false
-          ),
+
+          logout:
+            vi.fn(),
+
+          hasRole:
+            vi.fn(
+              () => false
+            ),
         });
       }
     );
 
     it(
-      "exchanges OAuth code and processes response",
+      "exchanges OAuth code and processes JWT",
       async () => {
         mockedExchangeOAuthCode
           .mockResolvedValue({
-            mfa_required: false,
+            mfa_required:
+              false,
+
             access_token:
               "oauth-jwt",
+
             token_type:
               "Bearer",
+
             expires_in:
               7200,
           });
@@ -159,11 +182,15 @@ describe(
         expect(
           processAuthenticationResponse
         ).toHaveBeenCalledWith({
-          mfa_required: false,
+          mfa_required:
+            false,
+
           access_token:
             "oauth-jwt",
+
           token_type:
             "Bearer",
+
           expires_in:
             7200,
         });
@@ -171,11 +198,13 @@ describe(
     );
 
     it(
-      "processes MFA challenge returned by exchange",
+      "processes MFA challenge",
       async () => {
         mockedExchangeOAuthCode
           .mockResolvedValue({
-            mfa_required: true,
+            mfa_required:
+              true,
+
             challenge_token:
               "challenge-token",
           });
@@ -211,7 +240,9 @@ describe(
         expect(
           processAuthenticationResponse
         ).toHaveBeenCalledWith({
-          mfa_required: true,
+          mfa_required:
+            true,
+
           challenge_token:
             "challenge-token",
         });
@@ -219,7 +250,7 @@ describe(
     );
 
     it(
-      "rejects blank OAuth code",
+      "rejects an empty OAuth code",
       async () => {
         const {
           result,
@@ -250,13 +281,65 @@ describe(
         );
 
         expect(
-          result.current.error?.message
+          result.current.error
+            ?.message
         ).toBe(
           "O código OAuth não foi informado."
         );
 
         expect(
           mockedExchangeOAuthCode
+        ).not.toHaveBeenCalled();
+      }
+    );
+
+    it(
+      "exposes OAuth exchange error",
+      async () => {
+        mockedExchangeOAuthCode
+          .mockRejectedValue(
+            new Error(
+              "Código OAuth inválido."
+            )
+          );
+
+        const {
+          result,
+        } =
+          renderHook(
+            () =>
+              useOAuthCallback(),
+            {
+              wrapper:
+                createWrapper(),
+            }
+          );
+
+        act(
+          () => {
+            result.current.mutate(
+              "oauth-code"
+            );
+          }
+        );
+
+        await waitFor(
+          () => {
+            expect(
+              result.current.isError
+            ).toBe(true);
+          }
+        );
+
+        expect(
+          result.current.error
+            ?.message
+        ).toBe(
+          "Código OAuth inválido."
+        );
+
+        expect(
+          processAuthenticationResponse
         ).not.toHaveBeenCalled();
       }
     );
