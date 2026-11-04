@@ -20,7 +20,6 @@ Plataforma web de recrutamento: candidatos consultam vagas, profissionais de RH 
 - [Como executar](#como-executar)
 - [Estrutura do repositório](#estrutura-do-repositório)
 - [Decisões arquiteturais](#decisões-arquiteturais)
-- [Roadmap](#roadmap)
 
 ## Funcionalidades
 
@@ -216,18 +215,6 @@ As principais decisões estão registradas como ADRs (Architecture Decision Reco
 4. Schema versionado com Flyway
 5. Imagem Docker gerada na pipeline
 
-## Roadmap
-
-- [x] API REST com Spring Security, JWT e perfis
-- [x] Confirmação de e-mail e recuperação de senha
-- [x] CI de backend e frontend com testes, SonarQube e auditoria de dependências
-- [x] Login com Google (OAuth 2.0 + OpenID Connect)
-- [x] Imagem Docker em toda pipeline
-- [ ] Publicação das imagens e deploy automatizado na AWS
-- [ ] Testes end-to-end com Cypress
-- [ ] Contrato OpenAPI versionado (Design First) com lint automático
-- [ ] Versionamento da API (`/api/v1`, `/api/v2`)
-- [ ] Observabilidade com métricas e dashboards no Grafana
 
 ## Autor
 
@@ -235,5 +222,7 @@ As principais decisões estão registradas como ADRs (Architecture Decision Reco
 
 **Felipe Pena** .  [Github] (https://github.com/felipee-pena)
 
+**Felipe Pena** .  [Email] (fehdacp@gmail)
 
-Projeto pessoal de estudo, desenvolvido para aplicar na prática padrões de mercado de arquitetura, segurança e entrega de software.
+
+Projeto pessoal de estudo, desenvolvido para aplicar na prática padrões de mercado de arquitetura, segurança e engenharia de software.
