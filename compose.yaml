@@ -1,0 +1,53 @@
+services:
+  backend:
+    build:
+      context: ./AppRH/AppRH
+      dockerfile: Dockerfile
+
+    image: apprh-backend:local
+
+    container_name: apprh-backend
+
+    env_file:
+      - ./compose.env
+
+    environment:
+      PORTA: "8081"
+
+    expose:
+      - "8081"
+
+    networks:
+      - apprh-network
+
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./AppRH_fs/apprh-frontend
+      dockerfile: Dockerfile
+
+      args:
+        VITE_API_URL: /
+        VITE_ACCESS_TOKEN_KEY: apprh.local.access-token
+
+    image: apprh-frontend:local
+
+    container_name: apprh-frontend
+
+    ports:
+      - "127.0.0.1:8090:80"
+
+    depends_on:
+      backend:
+        condition: service_started
+
+    networks:
+      - apprh-network
+
+    restart: unless-stopped
+
+networks:
+  apprh-network:
+    name: apprh-network
+    driver: bridge
