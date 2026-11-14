@@ -215,14 +215,12 @@ As principais decisões estão registradas como ADRs (Architecture Decision Reco
 4. Schema versionado com Flyway
 5. Imagem Docker gerada na pipeline
 
-
 ## Autor
 
 **Felipe Pena** · [LinkedIn](https://www.linkedin.com/in/felipe-pena-8a31621a6)
 
 **Felipe Pena** .  [Github] (https://github.com/felipee-pena)
 
-**Felipe Pena** .  [Email] (fehdacp@gmail)
-
+**Felipe Pena** . [E-mail] (fehdacp@gmail.com)
 
 Projeto pessoal de estudo, desenvolvido para aplicar na prática padrões de mercado de arquitetura, segurança e engenharia de software.
