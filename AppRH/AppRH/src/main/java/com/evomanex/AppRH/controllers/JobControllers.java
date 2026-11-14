@@ -133,7 +133,7 @@ public class JobControllers {
         attributes.addFlashAttribute("sucesso", "Vaga alterada com sucesso!");
         long codeLong = job.getCode();
         String code = "" + codeLong;
-        return "redirect:/jobs" + code;
+        return "redirect:/job/" + code;
     }
 
     //endpoint deletar vaga
