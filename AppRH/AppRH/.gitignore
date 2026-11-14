@@ -72,3 +72,11 @@ build/
 
 ### VS Code ###
 .vscode/
+
+### Compose Docker ###
+.env
+.env.*
+!.env.example
+compose.env
+
+

@@ -1,247 +1,411 @@
 package com.evomanex.AppRH.domain.user;
 
 import com.evomanex.AppRH.model.Company;
-
 import org.junit.jupiter.api.Test;
-
 import org.springframework.security.core.GrantedAuthority;
 
+import java.lang.reflect.Constructor;
 import java.util.Collection;
+import java.util.List;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class UserTest {
 
     @Test
-    void shouldCreateCandidatePendingEmailConfirmation() {
-        User user =
-                new User(
-                        "candidato@example.com",
-                        "$2a$10$encoded",
-                        UserRole.USER
-                );
-
-        assertThat(
-                user.getLogin()
-        ).isEqualTo(
-                "candidato@example.com"
-        );
-
-        assertThat(
-                user.getPassword()
-        ).isEqualTo(
-                "$2a$10$encoded"
-        );
-
-        assertThat(
-                user.getRole()
-        ).isEqualTo(
+    void shouldCreateUserWithPendingEmailConfirmationStatus() {
+        User user = new User(
+                "usuario@teste.com",
+                "senha-criptografada",
                 UserRole.USER
         );
 
-        assertThat(
-                user.getStatus()
-        ).isEqualTo(
-                UserStatus.PENDING_EMAIL_CONFIRMATION
+        assertEquals(
+                "usuario@teste.com",
+                user.getLogin()
         );
 
-        assertThat(
-                user.isEmailVerified()
-        ).isFalse();
-
-        assertThat(
-                user.isEnabled()
-        ).isFalse();
-
-        assertThat(
-                user.isAccountNonLocked()
-        ).isTrue();
-
-        assertThat(
-                user.isAccountNonExpired()
-        ).isTrue();
-
-        assertThat(
-                user.isCredentialsNonExpired()
-        ).isTrue();
-    }
-
-    @Test
-    void shouldActivateCandidateAfterEmailConfirmation() {
-        User user =
-                new User(
-                        "candidato@example.com",
-                        "$2a$10$encoded",
-                        UserRole.USER
-                );
-
-        user.confirmEmail();
-
-        assertThat(
-                user.getStatus()
-        ).isEqualTo(
-                UserStatus.ACTIVE
+        assertEquals(
+                "usuario@teste.com",
+                user.getUsername()
         );
 
-        assertThat(
-                user.isEmailVerified()
-        ).isTrue();
+        assertEquals(
+                "senha-criptografada",
+                user.getPassword()
+        );
 
-        assertThat(
+        assertEquals(
+                UserRole.USER,
+                user.getRole()
+        );
+
+        assertEquals(
+                UserStatus.PENDING_EMAIL_CONFIRMATION,
+                user.getStatus()
+        );
+
+        assertNull(
+                user.getId()
+        );
+
+        assertNull(
+                user.getCompany()
+        );
+
+        assertNull(
                 user.getEmailVerifiedAt()
-        ).isNotNull();
+        );
 
-        assertThat(
-                user.isEnabled()
-        ).isTrue();
+        assertFalse(
+                user.isEmailVerified()
+        );
 
-        assertThat(
+        assertTrue(
                 user.isPendingEmailConfirmation()
-        ).isFalse();
+        );
     }
 
     @Test
-    void shouldMoveRhUserToPendingApprovalAfterEmailConfirmation() {
+    void shouldInstantiateUserUsingJpaConstructor() throws Exception {
+        Constructor<User> constructor =
+                User.class.getDeclaredConstructor();
+
+        constructor.setAccessible(
+                true
+        );
+
         User user =
-                new User(
-                        "rh@example.com",
-                        "$2a$10$encoded",
-                        UserRole.USERRH
+                assertDoesNotThrow(
+                        () -> {
+                            return constructor.newInstance();
+                        }
                 );
+
+        assertNotNull(
+                user
+        );
+
+        assertNull(
+                user.getId()
+        );
+
+        assertNull(
+                user.getLogin()
+        );
+
+        assertNull(
+                user.getPassword()
+        );
+
+        assertNull(
+                user.getRole()
+        );
+
+        assertNull(
+                user.getCompany()
+        );
+
+        assertNull(
+                user.getStatus()
+        );
+
+        assertNull(
+                user.getEmailVerifiedAt()
+        );
+    }
+
+    @Test
+    void shouldReturnUserAuthorityForRegularUser() {
+        User user = new User(
+                "usuario@teste.com",
+                "senha",
+                UserRole.USER
+        );
+
+        Collection<? extends GrantedAuthority> authorities =
+                user.getAuthorities();
+
+        assertEquals(
+                List.of(
+                        "ROLE_USER"
+                ),
+                authorities
+                        .stream()
+                        .map(
+                                GrantedAuthority::getAuthority
+                        )
+                        .toList()
+        );
+    }
+
+    @Test
+    void shouldReturnUserRhAndUserAuthoritiesForUserRh() {
+        User user = new User(
+                "rh@teste.com",
+                "senha",
+                UserRole.USERRH
+        );
+
+        Collection<? extends GrantedAuthority> authorities =
+                user.getAuthorities();
+
+        assertEquals(
+                List.of(
+                        "ROLE_USERRH",
+                        "ROLE_USER"
+                ),
+                authorities
+                        .stream()
+                        .map(
+                                GrantedAuthority::getAuthority
+                        )
+                        .toList()
+        );
+    }
+
+    @Test
+    void shouldReturnAllAuthoritiesForAdmin() {
+        User user = new User(
+                "admin@teste.com",
+                "senha",
+                UserRole.ADMIN
+        );
+
+        Collection<? extends GrantedAuthority> authorities =
+                user.getAuthorities();
+
+        assertEquals(
+                List.of(
+                        "ROLE_ADMIN",
+                        "ROLE_USERRH",
+                        "ROLE_USER"
+                ),
+                authorities
+                        .stream()
+                        .map(
+                                GrantedAuthority::getAuthority
+                        )
+                        .toList()
+        );
+    }
+
+    @Test
+    void shouldKeepRegularUserAccountUnlockedBeforeEmailConfirmation() {
+        User user = new User(
+                "usuario@teste.com",
+                "senha",
+                UserRole.USER
+        );
+
+        assertTrue(
+                user.isAccountNonExpired()
+        );
+
+        assertTrue(
+                user.isAccountNonLocked()
+        );
+
+        assertTrue(
+                user.isCredentialsNonExpired()
+        );
+
+        assertFalse(
+                user.isEnabled()
+        );
+    }
+
+    @Test
+    void shouldActivateRegularUserAfterEmailConfirmation() {
+        User user = new User(
+                "usuario@teste.com",
+                "senha",
+                UserRole.USER
+        );
 
         user.confirmEmail();
 
-        assertThat(
+        assertEquals(
+                UserStatus.ACTIVE,
                 user.getStatus()
-        ).isEqualTo(
-                UserStatus.PENDING_APPROVAL
         );
 
-        assertThat(
-                user.isEmailVerified()
-        ).isTrue();
+        assertNotNull(
+                user.getEmailVerifiedAt()
+        );
 
-        assertThat(
+        assertTrue(
+                user.isEmailVerified()
+        );
+
+        assertFalse(
+                user.isPendingEmailConfirmation()
+        );
+
+        assertTrue(
                 user.isEnabled()
-        ).isFalse();
+        );
+
+        assertTrue(
+                user.isAccountNonLocked()
+        );
     }
 
     @Test
-    void shouldAssociateCompany() {
-        User user =
-                new User(
-                        "rh@example.com",
-                        "$2a$10$encoded",
-                        UserRole.USERRH
-                );
+    void shouldKeepUserRhPendingApprovalAfterEmailConfirmation() {
+        User user = new User(
+                "rh@teste.com",
+                "senha",
+                UserRole.USERRH
+        );
+
+        user.confirmEmail();
+
+        assertEquals(
+                UserStatus.PENDING_APPROVAL,
+                user.getStatus()
+        );
+
+        assertNotNull(
+                user.getEmailVerifiedAt()
+        );
+
+        assertTrue(
+                user.isEmailVerified()
+        );
+
+        assertFalse(
+                user.isPendingEmailConfirmation()
+        );
+
+        assertFalse(
+                user.isEnabled()
+        );
+
+        assertTrue(
+                user.isAccountNonLocked()
+        );
+    }
+
+    @Test
+    void shouldAssociateCompanyWithUser() {
+        User user = new User(
+                "rh@teste.com",
+                "senha",
+                UserRole.USERRH
+        );
 
         Company company =
-                new Company();
-
-        company.setId(
-                10L
-        );
-
-        company.setName(
-                "Empresa Teste"
-        );
+                instantiateCompany();
 
         user.setCompany(
                 company
         );
 
-        assertThat(
+        assertSame(
+                company,
                 user.getCompany()
-        ).isSameAs(
-                company
         );
     }
 
     @Test
-    void shouldReturnCandidateAuthority() {
-        User user =
-                new User(
-                        "candidato@example.com",
-                        "$2a$10$encoded",
-                        UserRole.USER
-                );
-
-        Collection<? extends GrantedAuthority> authorities =
-                user.getAuthorities();
-
-        assertThat(
-                authorities
-        )
-                .extracting(
-                        GrantedAuthority::getAuthority
-                )
-                .containsExactly(
-                        "ROLE_USER"
-                );
-    }
-
-    @Test
-    void shouldReturnRhAuthorities() {
-        User user =
-                new User(
-                        "rh@example.com",
-                        "$2a$10$encoded",
-                        UserRole.USERRH
-                );
-
-        Collection<? extends GrantedAuthority> authorities =
-                user.getAuthorities();
-
-        assertThat(
-                authorities
-        )
-                .extracting(
-                        GrantedAuthority::getAuthority
-                )
-                .containsExactly(
-                        "ROLE_USERRH",
-                        "ROLE_USER"
-                );
-    }
-
-    @Test
-    void shouldReturnAdminAuthorities() {
-        User user =
-                new User(
-                        "admin@example.com",
-                        "$2a$10$encoded",
-                        UserRole.ADMIN
-                );
-
-        Collection<? extends GrantedAuthority> authorities =
-                user.getAuthorities();
-
-        assertThat(
-                authorities
-        )
-                .extracting(
-                        GrantedAuthority::getAuthority
-                )
-                .containsExactly(
-                        "ROLE_ADMIN",
-                        "ROLE_USERRH",
-                        "ROLE_USER"
-                );
-    }
-
-    @Test
-    void shouldReturnUsernameFromLogin() {
-        User user =
-                new User(
-                        "usuario@example.com",
-                        "$2a$10$encoded",
-                        UserRole.USER
-                );
-
-        assertThat(
-                user.getUsername()
-        ).isEqualTo(
-                "usuario@example.com"
+    void shouldReturnTrueWhenComparingSameInstance() {
+        User user = new User(
+                "usuario@teste.com",
+                "senha",
+                UserRole.USER
         );
+
+        assertEquals(
+                user,
+                user
+        );
+    }
+
+    @Test
+    void shouldReturnFalseWhenComparingWithNull() {
+        User user = new User(
+                "usuario@teste.com",
+                "senha",
+                UserRole.USER
+        );
+
+        assertNotEquals(
+                user,
+                null
+        );
+    }
+
+    @Test
+    void shouldReturnFalseWhenComparingWithDifferentType() {
+        User user = new User(
+                "usuario@teste.com",
+                "senha",
+                UserRole.USER
+        );
+
+        assertNotEquals(
+                user,
+                "usuario"
+        );
+    }
+
+    @Test
+    void shouldReturnFalseWhenUsersHaveNoPersistedId() {
+        User firstUser = new User(
+                "primeiro@teste.com",
+                "senha",
+                UserRole.USER
+        );
+
+        User secondUser = new User(
+                "segundo@teste.com",
+                "senha",
+                UserRole.USER
+        );
+
+        assertNotEquals(
+                firstUser,
+                secondUser
+        );
+    }
+
+    @Test
+    void shouldReturnStableHashCode() {
+        User user = new User(
+                "usuario@teste.com",
+                "senha",
+                UserRole.USER
+        );
+
+        assertEquals(
+                User.class.hashCode(),
+                user.hashCode()
+        );
+    }
+
+    private Company instantiateCompany() {
+        try {
+            Constructor<Company> constructor =
+                    Company.class.getDeclaredConstructor();
+
+            constructor.setAccessible(
+                    true
+            );
+
+            return constructor.newInstance();
+        } catch (ReflectiveOperationException exception) {
+            throw new IllegalStateException(
+                    "Não foi possível instanciar Company para o teste",
+                    exception
+            );
+        }
     }
 }
