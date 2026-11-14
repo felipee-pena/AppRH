@@ -2,28 +2,21 @@ package com.evomanex.AppRH.controllers;
 
 import com.evomanex.AppRH.model.Candidate;
 import com.evomanex.AppRH.model.Job;
-
 import com.evomanex.AppRH.repository.CandidateRepository;
 import com.evomanex.AppRH.repository.JobRepository;
-
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-
 import org.springframework.test.util.ReflectionTestUtils;
-
 import org.springframework.validation.BindingResult;
-
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
-
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -496,13 +489,20 @@ class JobControllersTest {
         assertThat(
                 response
         ).isEqualTo(
-                "redirect:/10"
+                "redirect:/job/10"
         );
 
         verify(
                 jobRepository
         ).save(
                 job
+        );
+
+        verify(
+                redirectAttributes
+        ).addFlashAttribute(
+                "sucesso",
+                "Vaga alterada com sucesso!"
         );
     }
 
